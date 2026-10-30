@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - Gestión Integral CRUD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -20,7 +20,7 @@
             </div>
             <div class="flex items-center space-x-2">
                 <span id="badge-eval-ciega" class="hidden sm:inline-flex items-center text-[10px] bg-emerald-950 text-emerald-200 px-2 py-1 rounded border border-emerald-700 font-medium">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Evaluación a Ciegas (Zero-Knowledge)
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Bóveda Cifrada (Zero-Knowledge)
                 </span>
                 <span id="badge-wakelock" class="hidden sm:inline-flex items-center text-[10px] bg-blue-950 text-blue-200 px-2 py-1 rounded border border-blue-700">
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse"></span> Pantalla Bloqueada (WakeLock)
@@ -33,7 +33,7 @@
     </header>
 
     <!-- CONTENEDOR PRINCIPAL -->
-    <main class="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6">
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6">
 
         <!-- ========================================== -->
         <!-- VISTA 1: PORTAL DEL ESTUDIANTE (LOGIN/REG) -->
@@ -98,7 +98,7 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- VISTA 1.1: TABLERO DE EVALUACIONES DISPONIBLES -->
+        <!-- VISTA 1.1: TABLERO DE EVALUACIONES -->
         <!-- ========================================== -->
         <section id="vista-estudiante-tablero" class="hidden bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8 space-y-6">
             <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-4 gap-2">
@@ -125,7 +125,6 @@
                 </button>
             </div>
 
-            <!-- LISTADO DE EXÁMENES -->
             <div>
                 <h3 class="text-sm font-bold text-slate-800 mb-3">Evaluaciones Habilitadas para tu Sección</h3>
                 <div id="contenedor-evaluaciones-alumno" class="space-y-3">
@@ -149,7 +148,6 @@
                         <span class="text-[10px] uppercase font-bold text-slate-400 block">Tiempo Restante</span>
                         <div id="reloj-temporizador" class="text-lg font-black font-mono text-slate-800">00:00</div>
                     </div>
-                    <!-- CONTADOR DE ADVERTENCIA (1 AVISO MÁXIMO) -->
                     <div id="indicador-strikes" class="flex items-center space-x-1 text-[11px] font-bold text-slate-600">
                         <span>Advertencia:</span>
                         <span id="strike-1" class="px-2 py-0.5 rounded text-[10px] bg-slate-200 text-slate-700">Sin faltas</span>
@@ -193,7 +191,7 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- VISTA 3: RESULTADOS REGULARES (DESDE SERVIDOR) -->
+        <!-- VISTA 3: RESULTADOS REGULARES -->
         <!-- ========================================== -->
         <section id="vista-resultados-fin" class="hidden bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center space-y-4">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
@@ -213,7 +211,7 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- VISTA 4: SANCIÓN POR REINCIDENCIA (NOTA 01) -->
+        <!-- VISTA 4: SANCIÓN POR REINCIDENCIA (01) -->
         <!-- ========================================== -->
         <section id="vista-sancion-bloqueo" class="hidden bg-white rounded-lg shadow-sm border-2 border-red-500 p-8 text-center space-y-4">
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✕</div>
@@ -231,7 +229,7 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- VISTA 5: PANEL DOCENTE INTEGRAL (8 TABS) -->
+        <!-- VISTA 5: PANEL DOCENTE INTEGRAL (8 TABS CON CRUD COMPLETO) -->
         <!-- ========================================== -->
         <section id="vista-docente-panel" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between sm:items-center bg-white p-4 rounded-lg border border-slate-200 gap-2">
@@ -269,25 +267,21 @@
                         <button id="btn-todos-ausentes" class="bg-slate-500 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded text-xs font-bold">Desmarcar</button>
                     </div>
                 </div>
-                <div id="tabla-asistencia-contenedor" class="overflow-x-auto text-xs">
-                    <p class="text-slate-400 py-3">Selecciona una sección para listar alumnos.</p>
-                </div>
+                <div id="tabla-asistencia-contenedor" class="overflow-x-auto text-xs"></div>
             </div>
 
-            <!-- TAB 2: REANUDACIÓN ANTE APAGONES -->
+            <!-- TAB 2: REANUDACIÓN ANTE APAGONES (CON ELIMINACIÓN DE INTENTOS) -->
             <div id="tc-reanudacion" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 space-y-4">
                 <div class="border-b pb-4">
                     <h3 class="text-sm font-bold text-slate-800">Reanudación y Desbloqueo de Exámenes Interrumpidos</h3>
                     <p class="text-xs text-slate-500">
-                        Si un estudiante sufrió un corte eléctrico, agotamiento de batería o fue bloqueado accidentalmente, autoriza su reingreso manteniendo sus respuestas intactas.
+                        Si un estudiante sufrió un corte eléctrico, agotamiento de batería o fue bloqueado, desbloquea su intento manteniendo sus respuestas o elimínalo para que comience de cero.
                     </p>
                 </div>
-                <div id="tabla-reanudacion-contenedor" class="overflow-x-auto text-xs">
-                    <p class="text-slate-400 py-3">Cargando sesiones...</p>
-                </div>
+                <div id="tabla-reanudacion-contenedor" class="overflow-x-auto text-xs"></div>
             </div>
 
-            <!-- TAB 3: MATERIAS Y SECCIONES -->
+            <!-- TAB 3: MATERIAS Y SECCIONES (CRUD COMPLETO) -->
             <div id="tc-materias" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-4 border rounded bg-slate-50 space-y-3">
@@ -303,13 +297,13 @@
                         <button id="btn-crear-seccion" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 rounded text-xs">Registrar Sección</button>
                     </div>
                 </div>
-                <div>
-                    <h4 class="text-xs font-bold uppercase text-slate-700 mb-2">Materias y Secciones Creadas</h4>
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold uppercase text-slate-700">Gestión de Materias y Secciones Registradas</h4>
                     <div id="tabla-materias-resumen" class="overflow-x-auto text-xs"></div>
                 </div>
             </div>
 
-            <!-- TAB 4: EVALUACIONES Y TIEMPO -->
+            <!-- TAB 4: EVALUACIONES Y TIEMPO (CRUD COMPLETO) -->
             <div id="tc-evaluaciones" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 space-y-4">
                 <div class="border p-4 rounded bg-slate-50 space-y-3">
                     <h4 class="text-xs font-bold uppercase text-slate-700">Crear Evaluación / Objetivo</h4>
@@ -341,7 +335,7 @@
                 <div id="tabla-evaluaciones-resumen" class="overflow-x-auto text-xs"></div>
             </div>
 
-            <!-- TAB 5: BANCO DE PREGUNTAS (ARQUITECTURA DE EVALUACIÓN EN SERVIDOR) -->
+            <!-- TAB 5: BANCO DE PREGUNTAS (CRUD COMPLETO) -->
             <div id="tc-preguntas" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <select id="doc-preg-mat" class="border p-2 rounded bg-slate-50 font-semibold"></select>
@@ -351,7 +345,7 @@
                 </div>
                 <div id="box-crear-pregunta" class="hidden border p-4 rounded bg-slate-50 space-y-3 text-xs">
                     <div class="flex justify-between items-center">
-                        <span class="font-bold uppercase text-slate-700">Agregar Pregunta (Blindada en Servidor)</span>
+                        <span class="font-bold uppercase text-slate-700" id="box-preg-titulo">Agregar Pregunta (Bóveda Zero-Knowledge)</span>
                         <span id="txt-saldo-disponible" class="font-bold text-blue-800"></span>
                     </div>
                     <textarea id="p-enunciado" rows="2" placeholder="Enunciado de la pregunta..." class="w-full border p-2 rounded"></textarea>
@@ -367,20 +361,23 @@
                             <input type="number" id="p-puntos" placeholder="Ej. 5" step="0.25" min="0.25" class="w-full border p-1.5 rounded">
                         </div>
                         <button id="btn-agregar-pregunta" class="mt-4 bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded">
-                            Añadir Reactivo (Separar Enunciado y Clave Secreta)
+                            Guardar Pregunta en Bóveda
+                        </button>
+                        <button id="btn-cancelar-edicion-pregunta" class="hidden mt-4 bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold px-3 py-2 rounded">
+                            Cancelar Edición
                         </button>
                     </div>
                     <p class="text-[11px] text-slate-500 italic">
-                        * Seguridad: El enunciado se guarda en la colección pública de preguntas. La respuesta correcta se almacena en la colección privada 'claves_examen'. El alumno nunca la descarga.
+                        * Seguridad Zero-Knowledge: El enunciado y las opciones se guardan en la colección pública. La respuesta correcta se cifra y se guarda únicamente en la colección privada de claves del docente.
                     </p>
                 </div>
                 <div id="lista-preguntas-creadas" class="space-y-2 text-xs"></div>
             </div>
 
-            <!-- TAB 6: ALUMNOS Y CLAVES -->
+            <!-- TAB 6: ALUMNOS Y CLAVES (CRUD COMPLETO) -->
             <div id="tc-alumnos" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 space-y-4">
-                <div class="flex justify-between items-center border-b pb-3">
-                    <h3 class="text-sm font-bold text-slate-800">Alumnos Registrados y Reseteo de Contraseñas</h3>
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-3">
+                    <h3 class="text-sm font-bold text-slate-800">Alumnos Registrados y Gestión de Credenciales</h3>
                     <select id="filtro-alumnos-sec" class="border p-1.5 rounded text-xs bg-slate-50 font-medium">
                         <option value="TODAS">Todas las Secciones</option>
                     </select>
@@ -388,7 +385,7 @@
                 <div id="tabla-alumnos-gestion" class="overflow-x-auto text-xs"></div>
             </div>
 
-            <!-- TAB 7: CALIFICACIONES Y AUDITORÍA -->
+            <!-- TAB 7: CALIFICACIONES Y AUDITORÍA (CRUD COMPLETO) -->
             <div id="tc-calificaciones" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-3">
                     <h3 class="text-sm font-bold text-slate-800">Libro Digital de Calificaciones (Auditadas en Servidor)</h3>
@@ -400,7 +397,7 @@
                 <div id="tabla-calificaciones-final" class="overflow-x-auto text-xs"></div>
             </div>
 
-            <!-- TAB 8: PERFIL Y PIN -->
+            <!-- TAB 8: PERFIL Y PIN CIFRADO -->
             <div id="tc-perfil" class="hidden bg-white p-6 rounded-b-lg border border-slate-200 max-w-md space-y-4">
                 <div class="border-b pb-3">
                     <h3 class="text-sm font-bold text-slate-800">Perfil del Docente Titular</h3>
@@ -416,7 +413,7 @@
                     <input type="password" id="pin-viejo" placeholder="PIN Actual" class="w-full border p-2 rounded">
                     <input type="password" id="pin-nuevo" placeholder="Nuevo PIN (mínimo 4 dígitos)" class="w-full border p-2 rounded">
                     <input type="password" id="pin-confirma" placeholder="Confirmar Nuevo PIN" class="w-full border p-2 rounded">
-                    <button id="btn-actualizar-pin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded">Actualizar PIN</button>
+                    <button id="btn-actualizar-pin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded">Actualizar PIN Cifrado</button>
                 </div>
             </div>
         </section>
@@ -425,7 +422,7 @@
 
     <!-- FOOTER -->
     <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500">
-        Plataforma Universitaria • Cifrado Criptográfico SHA-256 de Credenciales • Evaluación en Servidor Zero-Knowledge
+        Plataforma Universitaria • Cifrado Criptográfico SHA-256 con Salt • Gestión Integral CRUD en Firestore
     </footer>
 
     <!-- ========================================== -->
@@ -452,7 +449,7 @@
         }
 
         // ==========================================
-        // 1. CONFIGURACIÓN FIREBASE REAL
+        // 1. CONFIGURACIÓN FIREBASE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDOlulLTxj24VoF9WJDvzmcqU8_m7FxnQE",
@@ -479,6 +476,8 @@
         let estudiantes = [];
         let calificaciones = [];
         let sesionesActivas = [];
+
+        let editandoPreguntaId = null;
 
         let estudianteSesion = null;
         let examenEnCurso = false;
@@ -549,12 +548,14 @@
             materias = [];
             snap.forEach(d => materias.push({ id: d.id, ...d.data() }));
             renderMateriasSelectores();
+            renderTablaMateriasResumen();
         });
 
         onSnapshot(collection(db, "secciones"), snap => {
             secciones = [];
             snap.forEach(d => secciones.push({ id: d.id, ...d.data() }));
             renderSeccionesSelectores();
+            renderTablaMateriasResumen();
         });
 
         onSnapshot(collection(db, "objetivos"), snap => {
@@ -663,7 +664,6 @@
                 el.innerHTML = h;
                 el.value = v;
             });
-            renderTablaMateriasResumen();
         }
 
         function renderSeccionesSelectores() {
@@ -726,12 +726,13 @@
         });
 
         // ==========================================
-        // 7. BANCO DE PREGUNTAS (SEPARACIÓN ESTRICTA)
+        // 7. BANCO DE PREGUNTAS (AGREGAR, EDITAR, BORRAR)
         // ==========================================
         document.getElementById("doc-preg-mat").addEventListener("change", (e) => {
             const matId = e.target.value;
             const selObj = document.getElementById("doc-preg-obj");
             document.getElementById("box-crear-pregunta").classList.add("hidden");
+            cancelarEdicionPregunta();
             if (!matId) {
                 selObj.innerHTML = '<option value="">-- Elige Materia Primero --</option>';
                 selObj.disabled = true;
@@ -748,6 +749,7 @@
         document.getElementById("doc-preg-obj").addEventListener("change", async (e) => {
             const objId = e.target.value;
             const box = document.getElementById("box-crear-pregunta");
+            cancelarEdicionPregunta();
             if (!objId) {
                 box.classList.add("hidden");
                 return;
@@ -784,24 +786,74 @@
                 const corIdx = clavesDocente[p.id];
                 const corText = (corIdx !== undefined && p.opciones[corIdx]) ? p.opciones[corIdx] : 'Guardada en servidor';
                 h += `
-                    <div class="border rounded p-2.5 bg-white flex justify-between items-start">
-                        <div>
-                            <p class="font-bold text-slate-800">${i+1}. ${p.enunciado} <span class="text-blue-600 font-normal">(${p.valor} pts)</span></p>
-                            <p class="text-emerald-700 text-[11px] mt-0.5">🔒 Clave Secreta Servidor: ${corText}</p>
+                    <div class="border rounded p-3 bg-white flex flex-col sm:flex-row justify-between items-start gap-2 shadow-sm">
+                        <div class="space-y-1">
+                            <p class="font-bold text-slate-800">${i+1}. ${p.enunciado} <span class="text-blue-600 font-semibold">(${p.valor} pts)</span></p>
+                            <p class="text-emerald-700 text-[11px] font-medium">🔒 Clave Secreta en Bóveda: ${corText}</p>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-slate-600">
+                                <span>A: ${p.opciones[0]}</span>
+                                <span>B: ${p.opciones[1]}</span>
+                                <span>C: ${p.opciones[2]}</span>
+                                <span>D: ${p.opciones[3]}</span>
+                            </div>
                         </div>
-                        <button onclick="window.eliminarPregunta('${p.id}', '${objId}')" class="text-red-500 font-bold hover:text-red-700 ml-2">Eliminar</button>
+                        <div class="flex items-center space-x-2 shrink-0">
+                            <button onclick="window.cargarPreguntaParaEditar('${p.id}')" class="bg-blue-50 text-blue-700 hover:bg-blue-100 px-2.5 py-1 rounded text-xs font-bold border border-blue-200">
+                                Editar
+                            </button>
+                            <button onclick="window.eliminarPregunta('${p.id}', '${objId}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-2.5 py-1 rounded text-xs font-bold border border-red-200">
+                                Eliminar
+                            </button>
+                        </div>
                     </div>
                 `;
             });
             cont.innerHTML = h;
         }
 
+        window.cargarPreguntaParaEditar = function(pregId) {
+            const p = preguntas.find(x => x.id === pregId);
+            if (!p) return;
+            editandoPreguntaId = pregId;
+            document.getElementById("p-enunciado").value = p.enunciado;
+            document.getElementById("p-opc-0").value = p.opciones[0] || "";
+            document.getElementById("p-opc-1").value = p.opciones[1] || "";
+            document.getElementById("p-opc-2").value = p.opciones[2] || "";
+            document.getElementById("p-opc-3").value = p.opciones[3] || "";
+            document.getElementById("p-puntos").value = p.valor || "";
+
+            const corIdx = clavesDocente[pregId] !== undefined ? clavesDocente[pregId] : 0;
+            const rds = document.querySelectorAll("input[name='opt_cor']");
+            rds.forEach(r => { if (parseInt(r.value) === parseInt(corIdx)) r.checked = true; });
+
+            document.getElementById("box-preg-titulo").innerText = "Modificar Pregunta Existente";
+            document.getElementById("btn-agregar-pregunta").innerText = "Actualizar Cambios en Bóveda";
+            document.getElementById("btn-cancelar-edicion-pregunta").classList.remove("hidden");
+            window.scrollTo({ top: document.getElementById("box-crear-pregunta").offsetTop - 40, behavior: 'smooth' });
+        };
+
+        function cancelarEdicionPregunta() {
+            editandoPreguntaId = null;
+            document.getElementById("p-enunciado").value = "";
+            document.getElementById("p-opc-0").value = "";
+            document.getElementById("p-opc-1").value = "";
+            document.getElementById("p-opc-2").value = "";
+            document.getElementById("p-opc-3").value = "";
+            document.getElementById("p-puntos").value = "";
+            document.getElementById("box-preg-titulo").innerText = "Agregar Pregunta (Bóveda Zero-Knowledge)";
+            document.getElementById("btn-agregar-pregunta").innerText = "Guardar Pregunta en Bóveda";
+            document.getElementById("btn-cancelar-edicion-pregunta").classList.add("hidden");
+        }
+        document.getElementById("btn-cancelar-edicion-pregunta").addEventListener("click", cancelarEdicionPregunta);
+
         window.eliminarPregunta = async function(pregId, objId) {
+            if (!confirm("¿Seguro que deseas eliminar esta pregunta del examen?")) return;
             await deleteDoc(doc(db, "preguntas", pregId));
             if (clavesDocente[pregId] !== undefined) {
                 delete clavesDocente[pregId];
                 await setDoc(doc(db, "claves_examen", objId), { respuestas: clavesDocente }, { merge: true });
             }
+            if (editandoPreguntaId === pregId) cancelarEdicionPregunta();
         };
 
         document.getElementById("btn-agregar-pregunta").addEventListener("click", async () => {
@@ -820,32 +872,40 @@
                 return;
             }
 
-            const acumulado = preguntas.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
+            // Validar saldo restando la pregunta actual si está en edición
+            const otrasPregs = preguntas.filter(p => p.id !== editandoPreguntaId);
+            const acumulado = otrasPregs.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0);
             if ((acumulado + val) > parseFloat(obj.ponderacion)) {
                 const saldo = (parseFloat(obj.ponderacion) - acumulado).toFixed(2);
-                alert(`Error Matemático: Esta pregunta supera la ponderación del examen (${obj.ponderacion} pts).\nPuntos disponibles restantes: ${saldo}`);
+                alert(`Error Matemático: Esta pregunta supera la ponderación del examen (${obj.ponderacion} pts).
+Puntos disponibles restantes: ${saldo}`);
                 return;
             }
 
-            const docPregRef = await addDoc(collection(db, "preguntas"), {
-                objetivoId: objId,
-                materiaId: obj.materiaId,
-                enunciado: enunciado,
-                opciones: [o0, o1, o2, o3],
-                valor: val
-            });
-
-            clavesDocente[docPregRef.id] = cor;
-            await setDoc(doc(db, "claves_examen", objId), {
-                respuestas: clavesDocente
-            }, { merge: true });
-
-            document.getElementById("p-enunciado").value = "";
-            document.getElementById("p-opc-0").value = "";
-            document.getElementById("p-opc-1").value = "";
-            document.getElementById("p-opc-2").value = "";
-            document.getElementById("p-opc-3").value = "";
-            document.getElementById("p-puntos").value = "";
+            if (editandoPreguntaId) {
+                // Actualizar pregunta existente
+                await updateDoc(doc(db, "preguntas", editandoPreguntaId), {
+                    enunciado: enunciado,
+                    opciones: [o0, o1, o2, o3],
+                    valor: val
+                });
+                clavesDocente[editandoPreguntaId] = cor;
+                await setDoc(doc(db, "claves_examen", objId), { respuestas: clavesDocente }, { merge: true });
+                alert("Pregunta actualizada con éxito.");
+                cancelarEdicionPregunta();
+            } else {
+                // Crear nueva pregunta
+                const docPregRef = await addDoc(collection(db, "preguntas"), {
+                    objetivoId: objId,
+                    materiaId: obj.materiaId,
+                    enunciado: enunciado,
+                    opciones: [o0, o1, o2, o3],
+                    valor: val
+                });
+                clavesDocente[docPregRef.id] = cor;
+                await setDoc(doc(db, "claves_examen", objId), { respuestas: clavesDocente }, { merge: true });
+                cancelarEdicionPregunta();
+            }
         });
 
         // ==========================================
@@ -865,7 +925,6 @@
             document.getElementById("tab-btn-ingreso").classList.remove("bg-white", "text-blue-700", "shadow-sm");
         });
 
-        // REGISTRO CON HASH CRIPTOGRÁFICO SHA-256
         document.getElementById("btn-completar-registro").addEventListener("click", async () => {
             const nom = document.getElementById("reg-nombre").value.trim();
             const ape = document.getElementById("reg-apellido").value.trim();
@@ -901,7 +960,6 @@
             document.getElementById("login-password").value = "";
         });
 
-        // INICIO DE SESIÓN CON COMPARACIÓN DE HASH
         document.getElementById("btn-iniciar-sesion-est").addEventListener("click", async () => {
             const ced = document.getElementById("login-cedula").value.trim();
             const pass = document.getElementById("login-password").value.trim();
@@ -1080,7 +1138,7 @@
                 const valGuardado = respuestasEstudiante[p.id];
                 h += `
                     <div class="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-2">
-                        <p class="font-bold text-xs sm:text-sm text-slate-800">${idx+1}. ${p.enunciado} <span class="text-blue-600 font-normal">(${p.valor} pts)</span></p>
+                        <p class="font-bold text-xs sm:text-sm text-slate-800">${idx+1}. ${p.enunciado} <span class="text-xs text-blue-600 font-normal">(${p.valor} pts)</span></p>
                         <div class="space-y-1.5 text-xs">
                 `;
                 p.opciones.forEach((opc, oi) => {
@@ -1147,7 +1205,7 @@
         };
 
         // ==========================================
-        // 12. SISTEMA DE 1 ADVERTENCIA (TOLERANCIA)
+        // 12. SISTEMA DE 1 ADVERTENCIA
         // ==========================================
         function activarListenersSupervision() {
             document.addEventListener("visibilitychange", onCambioPestana);
@@ -1259,7 +1317,7 @@
         }
 
         // ==========================================
-        // 13. ENTREGA CIEGA (CALIFICACIÓN EN SERVIDOR)
+        // 13. ENTREGA CIEGA
         // ==========================================
         document.getElementById("btn-entregar-examen-final").addEventListener("click", () => {
             procesarEntregaFinalCiega(false);
@@ -1307,7 +1365,7 @@
         }
 
         // ==========================================
-        // 14. PANEL DOCENTE (AUTENTICACIÓN CIFRADA)
+        // 14. PANEL DOCENTE (LOGIN CIFRADO)
         // ==========================================
         document.getElementById("btn-login-docente").addEventListener("click", async () => {
             const p = prompt("Ingresa el PIN de Acceso Docente:");
@@ -1345,64 +1403,9 @@
             });
         });
 
-        function renderTablaReanudacionDocente() {
-            const cont = document.getElementById("tabla-reanudacion-contenedor");
-            if (sesionesActivas.length === 0) {
-                cont.innerHTML = '<p class="text-slate-400 py-3">No hay sesiones activas o interrumpidas registradas.</p>';
-                return;
-            }
-            let h = `
-                <table class="w-full border-collapse border border-slate-200">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700 font-bold">
-                            <th class="border p-2">Cédula</th>
-                            <th class="border p-2">Estudiante</th>
-                            <th class="border p-2">Evaluación</th>
-                            <th class="border p-2 text-center">Respuestas Respaldadas</th>
-                            <th class="border p-2 text-center">Avisos Usados</th>
-                            <th class="border p-2 text-center">Estado</th>
-                            <th class="border p-2 text-center">Acción Docente</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            sesionesActivas.forEach(s => {
-                const totalResp = s.respuestas ? Object.keys(s.respuestas).length : 0;
-                h += `
-                    <tr>
-                        <td class="border p-2 font-mono">${s.cedula}</td>
-                        <td class="border p-2 font-medium">${s.estudianteNombre}</td>
-                        <td class="border p-2">${s.objetivoNombre}</td>
-                        <td class="border p-2 text-center font-bold text-blue-700">${totalResp} reactivos</td>
-                        <td class="border p-2 text-center font-bold ${s.strikes >= 2 ? 'text-red-600' : 'text-slate-700'}">${s.strikes || 0} / 1</td>
-                        <td class="border p-2 text-center">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${s.estado === 'bloqueado_por_infracciones' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
-                                ${s.estado}
-                            </span>
-                        </td>
-                        <td class="border p-2 text-center">
-                            <button onclick="window.desbloquearReanudacionSesion('${s.id}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[11px] font-bold">
-                                Desbloquear / Permitir Reanudación
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            h += '</tbody></table>';
-            cont.innerHTML = h;
-        }
-
-        window.desbloquearReanudacionSesion = async function(sesionDocId) {
-            if (confirm("¿Deseas desbloquear este intento? Se reiniciará su advertencia y el estudiante continuará con sus respuestas intactas.")) {
-                await updateDoc(doc(db, "sesiones_examen", sesionDocId), {
-                    estado: "reanudacion_permitida",
-                    strikes: 0
-                });
-                alert("Intento desbloqueado con éxito en la base de datos.");
-            }
-        };
-
-        // ASISTENCIA
+        // ==========================================
+        // TAB 1: ASISTENCIA
+        // ==========================================
         document.getElementById("filtro-asistencia-seccion").addEventListener("change", renderTablaAsistencia);
         function renderTablaAsistencia() {
             const secId = document.getElementById("filtro-asistencia-seccion").value;
@@ -1462,7 +1465,79 @@
             for (let a of alums) await updateDoc(doc(db, "estudiantes", a.id), { presenteAula: false });
         });
 
-        // MATERIAS Y SECCIONES
+        // ==========================================
+        // TAB 2: REANUDACIÓN & BORRADO DE SESIONES
+        // ==========================================
+        function renderTablaReanudacionDocente() {
+            const cont = document.getElementById("tabla-reanudacion-contenedor");
+            if (sesionesActivas.length === 0) {
+                cont.innerHTML = '<p class="text-slate-400 py-3">No hay sesiones activas o interrumpidas registradas.</p>';
+                return;
+            }
+            let h = `
+                <table class="w-full border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-bold">
+                            <th class="border p-2">Cédula</th>
+                            <th class="border p-2">Estudiante</th>
+                            <th class="border p-2">Evaluación</th>
+                            <th class="border p-2 text-center">Respuestas Guardadas</th>
+                            <th class="border p-2 text-center">Avisos</th>
+                            <th class="border p-2 text-center">Estado</th>
+                            <th class="border p-2 text-center">Acciones Docente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            sesionesActivas.forEach(s => {
+                const totalResp = s.respuestas ? Object.keys(s.respuestas).length : 0;
+                h += `
+                    <tr>
+                        <td class="border p-2 font-mono">${s.cedula}</td>
+                        <td class="border p-2 font-medium">${s.estudianteNombre}</td>
+                        <td class="border p-2">${s.objetivoNombre}</td>
+                        <td class="border p-2 text-center font-bold text-blue-700">${totalResp} reactivos</td>
+                        <td class="border p-2 text-center font-bold ${s.strikes >= 2 ? 'text-red-600' : 'text-slate-700'}">${s.strikes || 0} / 1</td>
+                        <td class="border p-2 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${s.estado === 'bloqueado_por_infracciones' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}">
+                                ${s.estado}
+                            </span>
+                        </td>
+                        <td class="border p-2 text-center space-x-1">
+                            <button onclick="window.desbloquearReanudacionSesion('${s.id}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded text-[11px] font-bold shadow-sm">
+                                Desbloquear
+                            </button>
+                            <button onclick="window.eliminarSesionExamen('${s.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[11px] font-bold shadow-sm">
+                                Reiniciar Intento
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            h += '</tbody></table>';
+            cont.innerHTML = h;
+        }
+
+        window.desbloquearReanudacionSesion = async function(sesionDocId) {
+            if (confirm("¿Deseas desbloquear este intento? Se reiniciará su advertencia y el estudiante continuará con sus respuestas intactas.")) {
+                await updateDoc(doc(db, "sesiones_examen", sesionDocId), {
+                    estado: "reanudacion_permitida",
+                    strikes: 0
+                });
+                alert("Intento desbloqueado con éxito en la base de datos.");
+            }
+        };
+
+        window.eliminarSesionExamen = async function(sesionDocId) {
+            if (confirm("¿Estás seguro de reiniciar completamente el intento de este estudiante? Se borrarán sus respuestas guardadas y podrá presentar de nuevo.")) {
+                await deleteDoc(doc(db, "sesiones_examen", sesionDocId));
+                alert("Sesión eliminada. El alumno puede presentar de nuevo.");
+            }
+        };
+
+        // ==========================================
+        // TAB 3: MATERIAS Y SECCIONES (CRUD COMPLETO)
+        // ==========================================
         document.getElementById("btn-crear-materia").addEventListener("click", async () => {
             const nom = document.getElementById("mat-nombre").value.trim();
             const cod = document.getElementById("mat-codigo").value.trim();
@@ -1486,15 +1561,40 @@
                 cont.innerHTML = '<p class="text-slate-400 py-2">No hay materias registradas.</p>';
                 return;
             }
-            let h = '<div class="space-y-2">';
+            let h = '<div class="space-y-4">';
             materias.forEach(m => {
                 const secs = secciones.filter(s => s.materiaId === m.id);
                 h += `
-                    <div class="border p-3 rounded bg-slate-50 flex justify-between items-center">
+                    <div class="border rounded-lg p-4 bg-slate-50 space-y-3 shadow-sm">
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-2">
+                            <div>
+                                <span class="font-bold text-slate-800 text-sm">${m.nombre}</span> 
+                                <span class="text-slate-500 font-mono text-xs ml-1 font-semibold">(${m.codigo || 'S/C'})</span>
+                            </div>
+                            <div class="flex space-x-1">
+                                <button onclick="window.editarMateria('${m.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-2.5 py-1 rounded text-xs border border-blue-300">
+                                    Editar Materia
+                                </button>
+                                <button onclick="window.eliminarMateria('${m.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-2.5 py-1 rounded text-xs border border-red-300">
+                                    Borrar Materia
+                                </button>
+                            </div>
+                        </div>
+
                         <div>
-                            <span class="font-bold text-slate-800">${m.nombre}</span> <span class="text-slate-500 font-mono text-[11px]">(${m.codigo || 'S/C'})</span>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                ${secs.map(s => `<span class="bg-white border px-1.5 py-0.5 rounded text-[10px] text-slate-700">${s.nombre}</span>`).join('')}
+                            <p class="text-[11px] font-bold uppercase text-slate-500 mb-1.5">Secciones Asignadas a esta Materia:</p>
+                            ${secs.length === 0 ? '<p class="text-slate-400 text-xs italic">No hay secciones registradas para esta materia.</p>' : ''}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                ${secs.map(s => `
+                                    <div class="flex items-center justify-between p-2 bg-white border rounded text-xs">
+                                        <span class="font-medium text-slate-800">${s.nombre}</span>
+                                        <div class="flex space-x-1 ml-2">
+                                            <button onclick="window.editarSeccion('${s.id}')" class="text-blue-600 hover:text-blue-800 font-bold text-[11px]">Editar</button>
+                                            <span class="text-slate-300">|</span>
+                                            <button onclick="window.eliminarSeccion('${s.id}')" class="text-red-500 hover:text-red-700 font-bold text-[11px]">Borrar</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
                     </div>
@@ -1504,7 +1604,46 @@
             cont.innerHTML = h;
         }
 
-        // EVALUACIONES
+        window.editarMateria = async function(id) {
+            const m = materias.find(x => x.id === id);
+            if (!m) return;
+            const nuevoNombre = prompt("Modificar nombre de la materia:", m.nombre);
+            if (nuevoNombre === null || !nuevoNombre.trim()) return;
+            const nuevoCodigo = prompt("Modificar código de la materia:", m.codigo || "");
+            if (nuevoCodigo === null) return;
+            await updateDoc(doc(db, "materias", id), {
+                nombre: nuevoNombre.trim(),
+                codigo: nuevoCodigo.trim()
+            });
+            alert("Materia actualizada con éxito.");
+        };
+
+        window.eliminarMateria = async function(id) {
+            if (!confirm("¿Deseas eliminar esta materia? Ten en cuenta que sus secciones y exámenes asociados deberán ser ajustados.")) return;
+            await deleteDoc(doc(db, "materias", id));
+            alert("Materia eliminada.");
+        };
+
+        window.editarSeccion = async function(id) {
+            const s = secciones.find(x => x.id === id);
+            if (!s) return;
+            const nuevoNombre = prompt("Modificar nombre de la sección:", s.nombre);
+            if (nuevoNombre === null || !nuevoNombre.trim()) return;
+            await updateDoc(doc(db, "secciones", id), {
+                nombre: nuevoNombre.trim()
+            });
+            alert("Sección actualizada con éxito.");
+        };
+
+        window.eliminarSeccion = async function(id) {
+            if (!confirm("¿Deseas eliminar esta sección?")) return;
+            await deleteDoc(doc(db, "secciones", id));
+            alert("Sección eliminada.");
+        };
+
+        // ==========================================
+        // TAB 4: EVALUACIONES (CRUD COMPLETO)
+        // ==========================================
         document.getElementById("btn-guardar-evaluacion").addEventListener("click", async () => {
             const matId = document.getElementById("eval-mat-select").value;
             const nom = document.getElementById("eval-nombre").value.trim();
@@ -1548,6 +1687,7 @@
                             <th class="border p-2 text-center">Peso</th>
                             <th class="border p-2 text-center">Tiempo</th>
                             <th class="border p-2 text-center">Estado</th>
+                            <th class="border p-2 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1557,12 +1697,20 @@
                 h += `
                     <tr>
                         <td class="border p-2 font-medium">${mat ? mat.nombre : ''}</td>
-                        <td class="border p-2">${o.nombre}</td>
+                        <td class="border p-2 font-bold text-slate-800">${o.nombre}</td>
                         <td class="border p-2 text-center font-bold text-blue-800">${o.ponderacion} pts</td>
                         <td class="border p-2 text-center font-mono">${o.duracionMinutos} min</td>
                         <td class="border p-2 text-center">
                             <button onclick="window.toggleEstadoObjetivo('${o.id}', ${!o.activo})" class="px-2 py-0.5 rounded text-[10px] font-bold ${o.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
                                 ${o.activo ? 'Activo' : 'Inactivo'}
+                            </button>
+                        </td>
+                        <td class="border p-2 text-center space-x-1">
+                            <button onclick="window.editarObjetivo('${o.id}')" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                                Editar
+                            </button>
+                            <button onclick="window.eliminarObjetivo('${o.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                                Borrar
                             </button>
                         </td>
                     </tr>
@@ -1576,7 +1724,35 @@
             await updateDoc(doc(db, "objetivos", id), { activo: st });
         };
 
-        // ALUMNOS Y CLAVES
+        window.editarObjetivo = async function(id) {
+            const o = objetivos.find(x => x.id === id);
+            if (!o) return;
+            const nuevoNom = prompt("Modificar nombre de la evaluación:", o.nombre);
+            if (nuevoNom === null || !nuevoNom.trim()) return;
+            const nuevoPeso = prompt("Modificar ponderación total (puntos):", o.ponderacion);
+            if (nuevoPeso === null || isNaN(parseFloat(nuevoPeso))) return;
+            const nuevaDur = prompt("Modificar duración en minutos:", o.duracionMinutos || 45);
+            if (nuevaDur === null || isNaN(parseInt(nuevaDur))) return;
+
+            await updateDoc(doc(db, "objetivos", id), {
+                nombre: nuevoNom.trim(),
+                ponderacion: parseFloat(nuevoPeso),
+                duracionMinutos: parseInt(nuevaDur)
+            });
+            alert("Evaluación actualizada con éxito.");
+        };
+
+        window.eliminarObjetivo = async function(id) {
+            if (!confirm("¿Deseas eliminar esta evaluación? Se borrará el objetivo de la plataforma.")) return;
+            await deleteDoc(doc(db, "objetivos", id));
+            // Eliminar claves secretas asociadas
+            await deleteDoc(doc(db, "claves_examen", id)).catch(() => {});
+            alert("Evaluación eliminada.");
+        };
+
+        // ==========================================
+        // TAB 6: ALUMNOS (CRUD COMPLETO)
+        // ==========================================
         function renderTablaAlumnos() {
             const secFiltro = document.getElementById("filtro-alumnos-sec")?.value || "TODAS";
             const cont = document.getElementById("tabla-alumnos-gestion");
@@ -1595,7 +1771,7 @@
                             <th class="border p-2">Estudiante</th>
                             <th class="border p-2">Sección</th>
                             <th class="border p-2 text-center">Seguridad</th>
-                            <th class="border p-2 text-center">Acción</th>
+                            <th class="border p-2 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1612,8 +1788,16 @@
                                 🔒 Cifrada (SHA-256)
                             </span>
                         </td>
-                        <td class="border p-2 text-center">
-                            <button onclick="window.resetearClaveAlumno('${e.id}', '${e.nombre}')" class="bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded text-[11px] font-bold">Resetear Clave</button>
+                        <td class="border p-2 text-center space-x-1">
+                            <button onclick="window.editarDatosAlumno('${e.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-[11px] font-bold border">
+                                Editar
+                            </button>
+                            <button onclick="window.resetearClaveAlumno('${e.id}', '${e.nombre}')" class="bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded text-[11px] font-bold">
+                                Clave
+                            </button>
+                            <button onclick="window.eliminarAlumno('${e.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[11px] font-bold">
+                                Borrar
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -1622,6 +1806,30 @@
             cont.innerHTML = h;
         }
         document.getElementById("filtro-alumnos-sec")?.addEventListener("change", renderTablaAlumnos);
+
+        window.editarDatosAlumno = async function(id) {
+            const e = estudiantes.find(x => x.id === id);
+            if (!e) return;
+            const nuevoNom = prompt("Modificar nombre del estudiante:", e.nombre);
+            if (nuevoNom === null || !nuevoNom.trim()) return;
+            const nuevoApe = prompt("Modificar apellido del estudiante:", e.apellido);
+            if (nuevoApe === null || !nuevoApe.trim()) return;
+            const nuevaCed = prompt("Modificar cédula:", e.cedula);
+            if (nuevaCed === null || !nuevaCed.trim()) return;
+
+            await updateDoc(doc(db, "estudiantes", id), {
+                nombre: nuevoNom.trim(),
+                apellido: nuevoApe.trim(),
+                cedula: nuevaCed.trim()
+            });
+            alert("Datos del estudiante actualizados con éxito.");
+        };
+
+        window.eliminarAlumno = async function(id) {
+            if (!confirm("¿Deseas eliminar este alumno de la plataforma?")) return;
+            await deleteDoc(doc(db, "estudiantes", id));
+            alert("Estudiante eliminado.");
+        };
 
         window.resetearClaveAlumno = async function(id, nom) {
             const nueva = prompt(`Ingresa la nueva contraseña temporal para ${nom}:`);
@@ -1634,7 +1842,9 @@
             }
         };
 
-        // LIBRO DE CALIFICACIONES
+        // ==========================================
+        // TAB 7: CALIFICACIONES (EDITAR NOTA, BORRAR REGISTRO)
+        // ==========================================
         function renderTablaCalificaciones() {
             const cont = document.getElementById("tabla-calificaciones-final");
             if (calificaciones.length === 0) {
@@ -1652,6 +1862,7 @@
                             <th class="border p-2">Objetivo</th>
                             <th class="border p-2 text-center">Nota</th>
                             <th class="border p-2">Observación / Auditoría</th>
+                            <th class="border p-2 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1666,6 +1877,14 @@
                         <td class="border p-2 text-slate-600">${c.objetivoNombre}</td>
                         <td class="border p-2 text-center font-bold ${c.sancionado ? 'text-red-700' : 'text-blue-800'}">${c.nota} / ${c.ponderacionTotal}</td>
                         <td class="border p-2 text-[11px] ${c.sancionado ? 'font-bold text-red-700' : 'text-slate-500'}">${c.motivoSancion}</td>
+                        <td class="border p-2 text-center space-x-1">
+                            <button onclick="window.editarNotaOficial('${c.id}')" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                                Editar
+                            </button>
+                            <button onclick="window.eliminarNotaOficial('${c.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-2 py-0.5 rounded text-[11px] font-bold">
+                                Borrar
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -1673,7 +1892,31 @@
             cont.innerHTML = h;
         }
 
-        // PERFIL Y ACTUALIZACIÓN DE PIN
+        window.editarNotaOficial = async function(califId) {
+            const c = calificaciones.find(x => x.id === califId);
+            if (!c) return;
+            const nuevaNota = prompt(`Modificar calificación para ${c.estudiante} (Escala: 0 a ${c.ponderacionTotal}):`, c.nota);
+            if (nuevaNota === null || isNaN(parseFloat(nuevaNota))) return;
+            const motivo = prompt("Motivo de la corrección de nota (Auditoría):", "Ajuste manual docente");
+            if (motivo === null) return;
+
+            await updateDoc(doc(db, "calificaciones", califId), {
+                nota: parseFloat(parseFloat(nuevaNota).toFixed(2)),
+                motivoSancion: `Modificada por docente: ${motivo.trim()}`,
+                sancionado: false
+            });
+            alert("Calificación corregida con éxito.");
+        };
+
+        window.eliminarNotaOficial = async function(califId) {
+            if (!confirm("¿Deseas eliminar este registro de calificación? Si el alumno vuelve a presentar se generará una nueva nota.")) return;
+            await deleteDoc(doc(db, "calificaciones", califId));
+            alert("Registro de calificación eliminado.");
+        };
+
+        // ==========================================
+        // TAB 8: PERFIL Y PIN CIFRADO
+        // ==========================================
         document.getElementById("btn-guardar-perfil").addEventListener("click", async () => {
             const ced = document.getElementById("doc-cedula-input").value.trim();
             const nom = document.getElementById("doc-nombre-input").value.trim();
