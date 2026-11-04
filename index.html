@@ -191,12 +191,13 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- VISTA 3: RESULTADOS REGULARES -->
+        <!-- VISTA 3: RESULTADOS REGULARES (REPORTE V4.1) -->
         <!-- ========================================== -->
         <section id="vista-resultados-fin" class="hidden bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center space-y-4">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
             <h2 class="text-2xl font-bold text-slate-900">Evaluación Entregada</h2>
             <p id="res-estudiante-linea" class="text-slate-600 text-xs sm:text-sm"></p>
+            
             <div class="bg-slate-50 border border-slate-200 rounded p-6 max-w-xs mx-auto">
                 <p class="text-xs uppercase font-semibold text-slate-500 mb-1">Calificación Oficial Asentada</p>
                 <div class="text-4xl font-black text-blue-800" id="res-nota-valor">--</div>
@@ -206,6 +207,13 @@
                 </span>
             </div>
             
+            <!-- BOTÓN PARA VER REPORTE AL FINALIZAR -->
+            <div id="btn-ver-reporte-final-container" class="hidden w-full mt-4 text-center">
+                <button onclick="window.verReporteEstudianteActual()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-6 py-2.5 rounded text-xs border border-blue-300 shadow-sm w-full max-w-xs mx-auto">
+                    🔍 Ver Detalles (Buenas y Malas)
+                </button>
+            </div>
+
             <button onclick="location.reload()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded text-xs font-semibold mt-4">
                 Volver al Portal Estudiantil
             </button>
@@ -293,7 +301,7 @@
                     <button id="btn-volver-estudiante-desde-docente" class="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded font-medium">
                         Volver a Vista Estudiantes
                     </button>
-                    <!-- BOTÓN CERRAR SESIÓN DOCENTE (LIMPIA LOCALSTORAGE) -->
+                    <!-- BOTÓN CERRAR SESIÓN DOCENTE -->
                     <button id="btn-salir-docente" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded font-medium">
                         Cerrar Sesión Docente
                     </button>
@@ -736,6 +744,13 @@
                 }
             }
         }
+
+        window.verReporteEstudianteActual = function() {
+            if (window.reporteHtmlActual) {
+                document.getElementById("contenido-reporte-modal").innerHTML = window.reporteHtmlActual;
+                document.getElementById("modal-ver-reporte").classList.remove("hidden");
+            }
+        };
 
         window.verReporteEstudiante = async function(sesionId) {
             const sSnap = await getDoc(doc(db, "sesiones_examen", sesionId));
@@ -1219,7 +1234,7 @@
                 `;
 
                 if (calif) {
-                    h += `<div class="flex flex-col sm:flex-row items-center gap-2 mt-2">
+                    h += `<div class="flex flex-col sm:flex-row items-center gap-2 mt-2 sm:mt-0">
                               <span class="bg-blue-100 text-blue-800 font-bold text-xs px-3 py-1.5 rounded text-center w-full sm:w-auto">Presentado (Nota: ${calif.nota}/${calif.ponderacionTotal})</span>
                               <button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded shadow-sm border border-slate-300 w-full sm:w-auto">
                                   Ver Detalles (Buenas/Malas)
@@ -1273,6 +1288,11 @@
             respuestasEstudiante = {};
             strikeCount = 0;
             tiempoRestanteSegundos = (objetivoActivo.duracionMinutos || 45) * 60;
+            
+            // Limpiar datos visuales de reportes anteriores en la misma sesión de navegador
+            window.reporteHtmlActual = null;
+            const btnFinal = document.getElementById("btn-ver-reporte-final-container");
+            if (btnFinal) btnFinal.classList.add("hidden");
 
             const q = query(collection(db, "preguntas"), where("objetivoId", "==", objId));
             const snaps = await getDocs(q);
@@ -1548,7 +1568,11 @@
                     if(data.calificado && data.reporteHtml) {
                         document.getElementById("res-nota-valor").innerText = data.notaFinal;
                         document.getElementById("res-escala-valor").innerText = `Calificación oficial asentada en servidor`;
-                        document.getElementById("contenedorReporteDetallado").innerHTML = data.reporteHtml;
+                        
+                        // Aparece el botón dinámicamente y se almacena en memoria la variable actual para el modal
+                        document.getElementById("btn-ver-reporte-final-container").classList.remove("hidden");
+                        window.reporteHtmlActual = data.reporteHtml;
+                        
                         unsubCalif();
                     }
                 }
