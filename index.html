@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - Correcciones V4</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - Correcciones V4.2 (Fase 1)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -382,11 +382,14 @@
                             <label class="block font-semibold text-slate-600 mb-1">Peso Total (Escala de Evaluación)</label>
                             <input type="number" id="eval-peso" placeholder="Ej. 20" class="w-full border p-2 rounded" min="1">
                         </div>
-                        <div>
-                            <label class="block font-semibold text-slate-600 mb-1">Duración: <span id="txt-slider-val" class="font-bold text-blue-700">45</span> min</label>
-                            <div class="flex items-center space-x-2">
-                                <input type="range" id="eval-duracion-slider" min="10" max="120" step="1" value="45" class="w-full">
-                                <input type="number" id="eval-duracion-num" min="10" max="120" value="45" class="w-16 border p-1 rounded text-center font-bold">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="eval-hora-inicio" class="block font-semibold text-slate-600 mb-1">Hora Inicio</label>
+                                <input type="datetime-local" id="eval-hora-inicio" class="w-full border p-2 rounded text-xs" required>
+                            </div>
+                            <div>
+                                <label for="eval-hora-fin" class="block font-semibold text-slate-600 mb-1">Hora Cierre</label>
+                                <input type="datetime-local" id="eval-hora-fin" class="w-full border p-2 rounded text-xs" required>
                             </div>
                         </div>
                     </div>
@@ -831,22 +834,6 @@
         }
         document.getElementById("eval-mat-select").addEventListener("change", renderCheckboxesSeccionesObjetivo);
 
-        // TEMPORIZADOR
-        const sliderDur = document.getElementById("eval-duracion-slider");
-        const numDur = document.getElementById("eval-duracion-num");
-        const txtDur = document.getElementById("txt-slider-val");
-
-        sliderDur.addEventListener("input", (e) => {
-            numDur.value = e.target.value;
-            txtDur.innerText = e.target.value;
-        });
-        numDur.addEventListener("input", (e) => {
-            let v = parseInt(e.target.value);
-            if (v < 10) v = 10;
-            if (v > 120) v = 120;
-            sliderDur.value = v;
-            txtDur.innerText = v;
-        });
 
         // ==========================================
         // 7. BANCO DE PREGUNTAS (AGREGAR, EDITAR, BORRAR)
@@ -1222,13 +1209,20 @@
                 const mat = materias.find(m => m.id === obj.materiaId);
                 const calif = calificaciones.find(c => c.cedula === estudianteSesion.cedula && c.objetivoId === obj.id);
                 const presente = estudianteSesion.presenteAula === true;
+                
+                const inicioFormat = obj.horaInicio ? new Date(obj.horaInicio).toLocaleString() : 'N/A';
+                const finFormat = obj.horaFin ? new Date(obj.horaFin).toLocaleString() : 'N/A';
 
                 h += `
                     <div class="border rounded-lg p-4 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                         <div>
                             <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded uppercase">${mat ? mat.nombre : 'Cátedra'}</span>
                             <h4 class="font-bold text-sm text-slate-800 mt-1">${obj.nombre}</h4>
-                            <p class="text-xs text-slate-500">Ponderación: ${obj.ponderacion} pts • Duración: ${obj.duracionMinutos || 45} min</p>
+                            <p class="text-xs text-slate-500 mt-1">Ponderación: ${obj.ponderacion} pts</p>
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                <span class="text-emerald-700 font-bold">Inicia:</span> ${inicioFormat} <br>
+                                <span class="text-red-700 font-bold">Cierra:</span> ${finFormat}
+                            </p>
                         </div>
                         <div>
                 `;
@@ -1274,7 +1268,7 @@
 
             respuestasEstudiante = sesion.respuestas || {};
             strikeCount = sesion.strikes || 0;
-            tiempoRestanteSegundos = sesion.tiempoRestanteSegundos || (objetivoActivo.duracionMinutos * 60);
+            tiempoRestanteSegundos = sesion.tiempoRestanteSegundos || 2700; // Valor fallback de 45 mins si no existe
 
             const q = query(collection(db, "preguntas"), where("objetivoId", "==", objetivoActivo.id));
             const snaps = await getDocs(q);
@@ -1287,7 +1281,9 @@
             objetivoActivo = objetivos.find(o => o.id === objId);
             respuestasEstudiante = {};
             strikeCount = 0;
-            tiempoRestanteSegundos = (objetivoActivo.duracionMinutos || 45) * 60;
+            
+            // Lógica temporal para mantener el examen del alumno funcional hasta el Paso 2
+            tiempoRestanteSegundos = 45 * 60; 
             
             // Limpiar datos visuales de reportes anteriores en la misma sesión de navegador
             window.reporteHtmlActual = null;
@@ -1901,11 +1897,20 @@
             const matId = document.getElementById("eval-mat-select").value;
             const nom = document.getElementById("eval-nombre").value.trim();
             const peso = parseFloat(document.getElementById("eval-peso").value);
-            const dur = parseInt(document.getElementById("eval-duracion-slider").value);
+            const horaInicioInput = document.getElementById("eval-hora-inicio").value;
+            const horaFinInput = document.getElementById("eval-hora-fin").value;
             const cbs = Array.from(document.querySelectorAll("input[name='sec_eval']:checked")).map(cb => cb.value);
 
-            if (!matId || !nom || isNaN(peso) || peso <= 0 || cbs.length === 0) {
-                alert("Completa todos los campos y marca al menos una sección autorizada.");
+            if (!matId || !nom || isNaN(peso) || peso <= 0 || !horaInicioInput || !horaFinInput || cbs.length === 0) {
+                alert("Completa todos los campos (incluyendo fechas/horas) y marca al menos una sección autorizada.");
+                return;
+            }
+
+            const timestampInicio = new Date(horaInicioInput).getTime();
+            const timestampFin = new Date(horaFinInput).getTime();
+
+            if (timestampFin <= timestampInicio) {
+                alert("Error de lógica: La hora de cierre debe ser posterior a la hora de inicio.");
                 return;
             }
 
@@ -1915,13 +1920,16 @@
                 materiaNombre: matObj ? matObj.nombre : 'Cátedra',
                 nombre: nom,
                 ponderacion: peso,
-                duracionMinutos: dur,
+                horaInicio: timestampInicio, 
+                horaFin: timestampFin,       
                 seccionesAutorizadas: cbs,
                 activo: true
             });
 
             document.getElementById("eval-nombre").value = "";
             document.getElementById("eval-peso").value = "";
+            document.getElementById("eval-hora-inicio").value = "";
+            document.getElementById("eval-hora-fin").value = "";
             alert("Evaluación registrada con éxito.");
         });
 
@@ -1938,7 +1946,7 @@
                             <th class="border p-2">Materia</th>
                             <th class="border p-2">Evaluación</th>
                             <th class="border p-2 text-center">Peso</th>
-                            <th class="border p-2 text-center">Tiempo</th>
+                            <th class="border p-2 text-center">Ventana de Tiempo</th>
                             <th class="border p-2 text-center">Estado</th>
                             <th class="border p-2 text-center">Acciones</th>
                         </tr>
@@ -1947,12 +1955,18 @@
             `;
             objetivos.forEach(o => {
                 const mat = materias.find(m => m.id === o.materiaId);
+                const inicioFormat = o.horaInicio ? new Date(o.horaInicio).toLocaleString() : 'N/A';
+                const finFormat = o.horaFin ? new Date(o.horaFin).toLocaleString() : 'N/A';
+                
                 h += `
                     <tr>
                         <td class="border p-2 font-medium">${mat ? mat.nombre : ''}</td>
                         <td class="border p-2 font-bold text-slate-800">${o.nombre}</td>
                         <td class="border p-2 text-center font-bold text-blue-800">${o.ponderacion} pts</td>
-                        <td class="border p-2 text-center font-mono">${o.duracionMinutos} min</td>
+                        <td class="border p-2 text-center font-mono text-[10px]">
+                            <div class="text-emerald-700 font-bold">Desde: ${inicioFormat}</div>
+                            <div class="text-red-700 font-bold">Hasta: ${finFormat}</div>
+                        </td>
                         <td class="border p-2 text-center">
                             <button onclick="window.toggleEstadoObjetivo('${o.id}', ${!o.activo})" class="px-2 py-0.5 rounded text-[10px] font-bold w-full mb-1 ${o.activo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
                                 ${o.activo ? 'Activo' : 'Inactivo'}
@@ -2011,15 +2025,13 @@
             if (nuevoNom === null || !nuevoNom.trim()) return;
             const nuevoPeso = prompt("Modificar ponderación total (puntos):", o.ponderacion);
             if (nuevoPeso === null || isNaN(parseFloat(nuevoPeso))) return;
-            const nuevaDur = prompt("Modificar duración en minutos:", o.duracionMinutos || 45);
-            if (nuevaDur === null || isNaN(parseInt(nuevaDur))) return;
 
+            // Se elimina la opción de editar duración/fechas por prompt por simplicidad visual
             await updateDoc(doc(db, "objetivos", id), {
                 nombre: nuevoNom.trim(),
-                ponderacion: parseFloat(nuevoPeso),
-                duracionMinutos: parseInt(nuevaDur)
+                ponderacion: parseFloat(nuevoPeso)
             });
-            alert("Evaluación actualizada con éxito.");
+            alert("Evaluación actualizada con éxito. (Para modificar la ventana de tiempo absoluta, borre y re-cree el objetivo).");
         };
 
         window.eliminarObjetivo = async function(id) {
