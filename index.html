@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - Correcciones V4.2 (Fase 1)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.3 (Edición de Tiempos)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -289,6 +289,40 @@
         </div>
 
         <!-- ========================================== -->
+        <!-- MODAL: EDITAR EVALUACIÓN (OBJETIVO Y TIEMPO) -->
+        <!-- ========================================== -->
+        <div id="modal-editar-objetivo" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+                <h3 class="text-lg font-bold text-slate-900 border-b pb-2">Modificar Evaluación</h3>
+                <input type="hidden" id="edit-eval-id">
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nombre de la Evaluación</label>
+                        <input type="text" id="edit-eval-nom" class="w-full border border-slate-300 p-2 rounded outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Ponderación Total (Puntos)</label>
+                        <input type="number" id="edit-eval-peso" class="w-full border border-slate-300 p-2 rounded outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Hora Inicio</label>
+                            <input type="datetime-local" id="edit-eval-hora-inicio" class="w-full border border-slate-300 p-2 rounded outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Hora Cierre</label>
+                            <input type="datetime-local" id="edit-eval-hora-fin" class="w-full border border-slate-300 p-2 rounded outline-none" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-3 border-t">
+                    <button id="btn-guardar-edicion-objetivo" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded text-xs shadow-sm">Guardar Cambios de Tiempo</button>
+                    <button onclick="document.getElementById('modal-editar-objetivo').classList.add('hidden')" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 rounded text-xs shadow-sm">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
         <!-- VISTA 5: PANEL DOCENTE INTEGRAL (8 TABS) -->
         <!-- ========================================== -->
         <section id="vista-docente-panel" class="hidden space-y-6">
@@ -384,11 +418,11 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label for="eval-hora-inicio" class="block font-semibold text-slate-600 mb-1">Hora Inicio</label>
+                                <label for="eval-hora-inicio" class="block font-semibold text-slate-600 mb-1">Hora Inicio Absoluta</label>
                                 <input type="datetime-local" id="eval-hora-inicio" class="w-full border p-2 rounded text-xs" required>
                             </div>
                             <div>
-                                <label for="eval-hora-fin" class="block font-semibold text-slate-600 mb-1">Hora Cierre</label>
+                                <label for="eval-hora-fin" class="block font-semibold text-slate-600 mb-1">Hora Cierre Absoluta</label>
                                 <input type="datetime-local" id="eval-hora-fin" class="w-full border p-2 rounded text-xs" required>
                             </div>
                         </div>
@@ -559,7 +593,10 @@
         let examenEnCurso = false;
         let objetivoActivo = null;
         let respuestasEstudiante = {};
+        
         let tiempoRestanteSegundos = 0;
+        let tiempoUltimaIteracion = 0; 
+        
         let timerInterval = null;
         let wakeLockSentinel = null;
         let unsubVigilanciaSesion = null;
@@ -734,7 +771,7 @@
                         nota: parseFloat(notaFinal),
                         ponderacionTotal: objData.ponderacion,
                         sancionado: false,
-                        motivoSancion: sesion.entregaAutomatica ? "Entrega automática por temporizador" : "Evaluación calificada en servidor (Zero-Knowledge)"
+                        motivoSancion: sesion.entregaAutomatica ? "Entrega automática por temporizador/cierre absoluto" : "Evaluación calificada en servidor (Zero-Knowledge)"
                     });
 
                     await updateDoc(doc(db, "sesiones_examen", sesion.id), {
@@ -1185,6 +1222,9 @@
             document.getElementById("vista-estudiante-portal").classList.remove("hidden");
         });
 
+        // ==========================================
+        // FASE 2: RENDERIZADO DEL TABLERO DEL ALUMNO
+        // ==========================================
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
             document.getElementById("vista-estudiante-tablero").classList.remove("hidden");
@@ -1205,6 +1245,8 @@
             }
 
             let h = '';
+            const ahora = Date.now();
+
             objs.forEach(obj => {
                 const mat = materias.find(m => m.id === obj.materiaId);
                 const calif = calificaciones.find(c => c.cedula === estudianteSesion.cedula && c.objetivoId === obj.id);
@@ -1214,30 +1256,34 @@
                 const finFormat = obj.horaFin ? new Date(obj.horaFin).toLocaleString() : 'N/A';
 
                 h += `
-                    <div class="border rounded-lg p-4 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                        <div>
+                    <div class="border rounded-lg p-4 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm">
+                        <div class="w-full sm:w-auto">
                             <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded uppercase">${mat ? mat.nombre : 'Cátedra'}</span>
                             <h4 class="font-bold text-sm text-slate-800 mt-1">${obj.nombre}</h4>
                             <p class="text-xs text-slate-500 mt-1">Ponderación: ${obj.ponderacion} pts</p>
-                            <p class="text-[11px] text-slate-500 mt-1">
+                            <p class="text-[11px] text-slate-500 mt-1 bg-white inline-block p-1.5 border rounded">
                                 <span class="text-emerald-700 font-bold">Inicia:</span> ${inicioFormat} <br>
                                 <span class="text-red-700 font-bold">Cierra:</span> ${finFormat}
                             </p>
                         </div>
-                        <div>
+                        <div class="w-full sm:w-auto mt-2 sm:mt-0">
                 `;
 
                 if (calif) {
-                    h += `<div class="flex flex-col sm:flex-row items-center gap-2 mt-2 sm:mt-0">
+                    h += `<div class="flex flex-col sm:flex-row items-center gap-2">
                               <span class="bg-blue-100 text-blue-800 font-bold text-xs px-3 py-1.5 rounded text-center w-full sm:w-auto">Presentado (Nota: ${calif.nota}/${calif.ponderacionTotal})</span>
                               <button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded shadow-sm border border-slate-300 w-full sm:w-auto">
-                                  Ver Detalles (Buenas/Malas)
+                                  Ver Detalles
                               </button>
                           </div>`;
                 } else if (!presente) {
                     h += `<span class="text-xs text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded font-semibold text-center block">⚠️ Requiere Asistencia en Aula Física</span>`;
+                } else if (obj.horaInicio && ahora < obj.horaInicio) {
+                    h += `<span class="text-xs text-blue-700 bg-blue-100 border border-blue-300 px-3 py-2 rounded font-semibold text-center block w-full shadow-sm">🕒 El examen inicia a las ${new Date(obj.horaInicio).toLocaleTimeString()}</span>`;
+                } else if (obj.horaFin && ahora > obj.horaFin) {
+                    h += `<span class="text-xs text-red-700 bg-red-100 border border-red-300 px-3 py-2 rounded font-semibold text-center block w-full shadow-sm">El periodo de evaluación ha cerrado</span>`;
                 } else {
-                    h += `<button onclick="window.iniciarExamenAlumno('${obj.id}')" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded text-xs w-full sm:w-auto">Comenzar Evaluación</button>`;
+                    h += `<button onclick="window.iniciarExamenAlumno('${obj.id}')" class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2.5 rounded text-xs w-full shadow-sm">Comenzar Evaluación</button>`;
                 }
 
                 h += `</div></div>`;
@@ -1246,7 +1292,7 @@
         }
 
         // ==========================================
-        // 9. RECUPERACIÓN ANTE APAGONES
+        // 9. RECUPERACIÓN ANTE APAGONES (FASE 2)
         // ==========================================
         function verificarSesionPendienteEstudiante() {
             if (!estudianteSesion) return;
@@ -1268,7 +1314,15 @@
 
             respuestasEstudiante = sesion.respuestas || {};
             strikeCount = sesion.strikes || 0;
-            tiempoRestanteSegundos = sesion.tiempoRestanteSegundos || 2700; // Valor fallback de 45 mins si no existe
+            
+            const ahora = Date.now();
+            tiempoRestanteSegundos = Math.floor((objetivoActivo.horaFin - ahora) / 1000);
+            
+            if (tiempoRestanteSegundos <= 0) {
+                alert("El periodo de esta evaluación finalizó mientras estabas desconectado. El examen se entregará automáticamente.");
+                autoEntregarPorTiempoAgotado();
+                return;
+            }
 
             const q = query(collection(db, "preguntas"), where("objetivoId", "==", objetivoActivo.id));
             const snaps = await getDocs(q);
@@ -1277,15 +1331,23 @@
             ejecutarPantallaExamen(pregs, true);
         }
 
+        // ==========================================
+        // INICIO DE EXAMEN (FASE 2)
+        // ==========================================
         window.iniciarExamenAlumno = async function(objId) {
             objetivoActivo = objetivos.find(o => o.id === objId);
             respuestasEstudiante = {};
             strikeCount = 0;
             
-            // Lógica temporal para mantener el examen del alumno funcional hasta el Paso 2
-            tiempoRestanteSegundos = 45 * 60; 
+            const ahora = Date.now();
+            tiempoRestanteSegundos = Math.floor((objetivoActivo.horaFin - ahora) / 1000);
             
-            // Limpiar datos visuales de reportes anteriores en la misma sesión de navegador
+            if (tiempoRestanteSegundos <= 0) {
+                alert("El periodo de evaluación ya ha finalizado.");
+                renderTableroEstudiante(); 
+                return;
+            }
+            
             window.reporteHtmlActual = null;
             const btnFinal = document.getElementById("btn-ver-reporte-final-container");
             if (btnFinal) btnFinal.classList.add("hidden");
@@ -1311,7 +1373,6 @@
                 seccionId: estudianteSesion.seccionId,
                 respuestas: {},
                 strikes: 0,
-                tiempoRestanteSegundos: tiempoRestanteSegundos,
                 estado: "en_curso",
                 calificado: false,
                 fechaInicio: new Date().toLocaleString(),
@@ -1322,7 +1383,7 @@
         };
 
         // ==========================================
-        // 10. EJECUCIÓN DEL EXAMEN A CIEGAS
+        // 10. EJECUCIÓN DEL EXAMEN A CIEGAS + ANTI-CHEAT DE RELOJ
         // ==========================================
         function ejecutarPantallaExamen(pregs, esReanudacion) {
             examenEnCurso = true;
@@ -1352,7 +1413,7 @@
                 p.opciones.forEach((opc, oi) => {
                     const checked = (valGuardado !== undefined && parseInt(valGuardado) === oi) ? 'checked' : '';
                     h += `
-                        <label class="flex items-center space-x-2 p-2 bg-white border rounded cursor-pointer hover:bg-slate-100">
+                        <label class="flex items-center space-x-2 p-2 bg-white border rounded cursor-pointer hover:bg-slate-100 transition-colors">
                             <input type="radio" name="preg_${p.id}" value="${oi}" onchange="window.guardarRespuestaAutoguardado('${p.id}', ${oi})" ${checked}>
                             <span>${opc}</span>
                         </label>
@@ -1364,12 +1425,22 @@
 
             if (timerInterval) clearInterval(timerInterval);
             actualizarRelojTexto();
+            
+            tiempoUltimaIteracion = performance.now();
+            
             timerInterval = setInterval(() => {
-                tiempoRestanteSegundos--;
-                actualizarRelojTexto();
+                const tiempoActual = performance.now();
+                const deltaSegundos = (tiempoActual - tiempoUltimaIteracion) / 1000;
+                tiempoUltimaIteracion = tiempoActual;
+                
+                tiempoRestanteSegundos -= deltaSegundos;
+                
                 if (tiempoRestanteSegundos <= 0) {
+                    tiempoRestanteSegundos = 0;
                     clearInterval(timerInterval);
                     autoEntregarPorTiempoAgotado();
+                } else {
+                    actualizarRelojTexto();
                 }
             }, 1000);
 
@@ -1385,12 +1456,21 @@
         }
 
         function actualizarRelojTexto() {
-            const min = Math.floor(tiempoRestanteSegundos / 60);
-            const seg = tiempoRestanteSegundos % 60;
+            const trs = Math.max(0, Math.floor(tiempoRestanteSegundos));
+            const min = Math.floor(trs / 60);
+            const seg = trs % 60;
             const el = document.getElementById("reloj-temporizador");
-            el.innerText = `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
-            if (tiempoRestanteSegundos < 300) el.classList.add("text-amber-600");
-            if (tiempoRestanteSegundos < 60) {
+            
+            if (min >= 60) {
+                const horas = Math.floor(min / 60);
+                const minRestantes = min % 60;
+                el.innerText = `${horas.toString().padStart(2, '0')}:${minRestantes.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
+            } else {
+                el.innerText = `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
+            }
+            
+            if (trs < 300) el.classList.add("text-amber-600");
+            if (trs < 60) {
                 el.classList.remove("text-amber-600");
                 el.classList.add("text-red-600", "animate-pulse");
             }
@@ -1406,7 +1486,6 @@
             await updateDoc(doc(db, "sesiones_examen", sesionId), {
                 respuestas: respuestasEstudiante,
                 ultimaPreguntaId: pregId,
-                tiempoRestanteSegundos: tiempoRestanteSegundos,
                 ultimaActualizacion: new Date().toLocaleTimeString()
             }).catch(() => {});
             document.getElementById("txt-estado-guardado").innerText = "Respuestas respaldadas en la nube (Zero-Knowledge)";
@@ -1565,7 +1644,6 @@
                         document.getElementById("res-nota-valor").innerText = data.notaFinal;
                         document.getElementById("res-escala-valor").innerText = `Calificación oficial asentada en servidor`;
                         
-                        // Aparece el botón dinámicamente y se almacena en memoria la variable actual para el modal
                         document.getElementById("btn-ver-reporte-final-container").classList.remove("hidden");
                         window.reporteHtmlActual = data.reporteHtml;
                         
@@ -1994,7 +2072,6 @@
             await updateDoc(doc(db, "objetivos", id), { activo: st });
         };
 
-        // BUCLE ESTRICTO (Fix V4.1) - Reiniciar para Todos
         window.republicarExamen = async function(objId, objNombre) {
             if (!confirm(`⚠️ ALERTA: ¿Deseas REINICIAR el examen "${objNombre}" para todos?\n\nEsta acción borrará TODOS los intentos, sesiones activas y notas asentadas de este examen. \n\nLas preguntas y opciones se mantendrán intactas para que todos puedan volver a presentar desde cero.\n\n¿Estás seguro de continuar?`)) return;
             
@@ -2018,21 +2095,57 @@
             }
         };
 
+        // ====== NUEVA FUNCIÓN PARA EDITAR OBJETIVOS (MODAL) ======
+        function formatearFechaParaInput(timestamp) {
+            if (!timestamp) return "";
+            const d = new Date(timestamp);
+            const offset = d.getTimezoneOffset() * 60000;
+            return (new Date(d - offset)).toISOString().slice(0, 16);
+        }
+
         window.editarObjetivo = async function(id) {
             const o = objetivos.find(x => x.id === id);
             if (!o) return;
-            const nuevoNom = prompt("Modificar nombre de la evaluación:", o.nombre);
-            if (nuevoNom === null || !nuevoNom.trim()) return;
-            const nuevoPeso = prompt("Modificar ponderación total (puntos):", o.ponderacion);
-            if (nuevoPeso === null || isNaN(parseFloat(nuevoPeso))) return;
-
-            // Se elimina la opción de editar duración/fechas por prompt por simplicidad visual
-            await updateDoc(doc(db, "objetivos", id), {
-                nombre: nuevoNom.trim(),
-                ponderacion: parseFloat(nuevoPeso)
-            });
-            alert("Evaluación actualizada con éxito. (Para modificar la ventana de tiempo absoluta, borre y re-cree el objetivo).");
+            
+            document.getElementById("edit-eval-id").value = o.id;
+            document.getElementById("edit-eval-nom").value = o.nombre;
+            document.getElementById("edit-eval-peso").value = o.ponderacion;
+            document.getElementById("edit-eval-hora-inicio").value = formatearFechaParaInput(o.horaInicio);
+            document.getElementById("edit-eval-hora-fin").value = formatearFechaParaInput(o.horaFin);
+            
+            document.getElementById("modal-editar-objetivo").classList.remove("hidden");
         };
+
+        document.getElementById("btn-guardar-edicion-objetivo").addEventListener("click", async () => {
+            const id = document.getElementById("edit-eval-id").value;
+            const nom = document.getElementById("edit-eval-nom").value.trim();
+            const peso = parseFloat(document.getElementById("edit-eval-peso").value);
+            const horaInicioInput = document.getElementById("edit-eval-hora-inicio").value;
+            const horaFinInput = document.getElementById("edit-eval-hora-fin").value;
+
+            if (!nom || isNaN(peso) || peso <= 0 || !horaInicioInput || !horaFinInput) {
+                alert("Completa todos los campos correctamente.");
+                return;
+            }
+
+            const timestampInicio = new Date(horaInicioInput).getTime();
+            const timestampFin = new Date(horaFinInput).getTime();
+
+            if (timestampFin <= timestampInicio) {
+                alert("Error de lógica: La hora de cierre debe ser posterior a la hora de inicio.");
+                return;
+            }
+
+            await updateDoc(doc(db, "objetivos", id), {
+                nombre: nom,
+                ponderacion: peso,
+                horaInicio: timestampInicio,
+                horaFin: timestampFin
+            });
+
+            document.getElementById("modal-editar-objetivo").classList.add("hidden");
+            alert("Evaluación y tiempos actualizados con éxito.");
+        });
 
         window.eliminarObjetivo = async function(id) {
             if (!confirm("¿Deseas eliminar esta evaluación? Se borrará el objetivo de la plataforma y todas sus claves.")) return;
