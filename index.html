@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.3 (Edición de Tiempos)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.5 (Estable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <!-- FORMULARIO LOGIN -->
+            <!-- FORMULARIO LOGIN (ACTUALIZADO PARA HUELLA BIOMÉTRICA) -->
             <form id="form-login-estudiante" class="space-y-4 max-w-md mx-auto">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Cédula de Identidad</label>
@@ -65,7 +65,7 @@
                 </button>
             </form>
 
-            <!-- FORMULARIO REGISTRO -->
+            <!-- FORMULARIO REGISTRO (ACTUALIZADO PARA GUARDAR CLAVES) -->
             <form id="form-registro-estudiante" class="hidden space-y-4 max-w-md mx-auto">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -95,6 +95,7 @@
                     Crear Cuenta de Estudiante
                 </button>
             </form>
+        </section>
 
         <!-- ========================================== -->
         <!-- VISTA 1.1: TABLERO DE EVALUACIONES -->
@@ -344,7 +345,7 @@
             <!-- TABS -->
             <div class="flex flex-wrap border-b border-slate-200 bg-white rounded-t-lg px-4 pt-2 gap-1 text-xs font-semibold">
                 <button id="tab-btn-asistencia" class="py-2 border-b-2 border-blue-700 text-blue-700 px-3">1. Asistencia en Aula</button>
-                <button id="tab-btn-reanudacion" class="py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 px-3">2. Reanudación de Intentos (Apagones)</button>
+                <button id="tab-btn-reanudacion" class="py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 px-3">2. Reanudación (Apagones)</button>
                 <button id="tab-btn-materias" class="py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 px-3">3. Materias & Secciones</button>
                 <button id="tab-btn-evaluaciones" class="py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 px-3">4. Evaluaciones & Tiempo</button>
                 <button id="tab-btn-preguntas" class="py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 px-3">5. Banco de Preguntas</button>
@@ -656,9 +657,9 @@
                     nombre: "",
                     apellido: "",
                     pinHash: pinHashInicial
-                }, { merge: true }); // El merge protege de sobreescrituras accidentales
+                }, { merge: true });
             }
-        });
+        }).catch(e => console.error("Error al cargar perfil docente inicial:", e));
 
         // 4.2 Escucha reactiva pasiva (Solo lee, JAMÁS sobreescribe)
         onSnapshot(docenteRef, async snap => {
@@ -1068,8 +1069,8 @@
             document.getElementById("tab-btn-ingreso").classList.remove("bg-white", "text-blue-700", "shadow-sm");
         });
 
-        // REGISTRO CON CÉDULA ÚNICA ESTRICTA
-      document.getElementById("form-registro-estudiante").addEventListener("submit", async (e) => {
+        // REGISTRO CON CÉDULA ÚNICA ESTRICTA (V4.4 - Manejo de Formulario)
+        document.getElementById("form-registro-estudiante").addEventListener("submit", async (e) => {
             e.preventDefault();
             const nom = document.getElementById("reg-nombre").value.trim();
             const ape = document.getElementById("reg-apellido").value.trim();
@@ -1111,70 +1112,9 @@
             document.getElementById("login-password").value = "";
         });
 
-        // INICIO DE SESIÓN CON CONTROL DE CONEXIÓN ÚNICA
+        // INICIO DE SESIÓN CON CONTROL DE CONEXIÓN ÚNICA (V4.4 - Manejo de Formulario)
         document.getElementById("form-login-estudiante").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const rawCed = document.getElementById("login-cedula").value;
-            const pass = document.getElementById("login-password").value.trim();
-            const ced = normalizarCedula(rawCed);
-
-            if (!ced || !pass) {
-                alert("Ingresa tu cédula y contraseña.");
-                return;
-            }
-
-            const refEst = doc(db, "estudiantes", ced);
-            const snapEst = await getDoc(refEst);
-
-            let estData = null;
-            let estDocId = ced;
-
-            if (snapEst.exists()) {
-                estData = snapEst.data();
-            } else {
-                const estOld = estudiantes.find(e => normalizarCedula(e.cedula) === ced);
-                if (estOld) {
-                    estData = estOld;
-                    estDocId = estOld.id;
-                }
-            }
-
-            if (!estData) {
-                alert("Cédula de identidad no registrada en el sistema.");
-                return;
-            }
-
-            const passHashIngresado = await cifrarClave(pass);
-
-            let claveValida = false;
-            if (estData.passwordHash) {
-                claveValida = (estData.passwordHash === passHashIngresado);
-            } else if (estData.password && estData.password === pass) {
-                await updateDoc(doc(db, "estudiantes", estDocId), { passwordHash: passHashIngresado, password: null });
-                claveValida = true;
-            }
-
-            if (!claveValida) {
-                alert("Contraseña incorrecta.");
-                return;
-            }
-
-            const tokenSesionNuevo = (crypto.randomUUID ? crypto.randomUUID() : 'tok_' + Math.random().toString(36).substring(2) + Date.now());
-            sessionStorage.setItem("token_sesion_estudiante", tokenSesionNuevo);
-
-            await updateDoc(doc(db, "estudiantes", estDocId), {
-                tokenSesionActivo: tokenSesionNuevo,
-                enLinea: true,
-                ultimoInicioSesion: new Date().toLocaleString()
-            });
-
-            estudianteSesion = { id: estDocId, ...estData, cedula: ced };
-            activarVigilanciaConexionUnica(estDocId, tokenSesionNuevo);
-            mostrarTableroEstudiante();
-        });
-
-        // INICIO DE SESIÓN CON CONTROL DE CONEXIÓN ÚNICA
-        document.getElementById("btn-iniciar-sesion-est").addEventListener("click", async () => {
             const rawCed = document.getElementById("login-cedula").value;
             const pass = document.getElementById("login-password").value.trim();
             const ced = normalizarCedula(rawCed);
