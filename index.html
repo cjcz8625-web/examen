@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.6 (Migración a Biometría)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.7.1 (Estable y Segura)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -195,8 +195,13 @@
                     <h3 class="text-lg font-bold text-slate-900 mt-2">Incidencia de Supervisión Detectada</h3>
                     <p id="modal-adv-motivo" class="text-xs text-slate-600 mt-1"></p>
                 </div>
+                <div class="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-700 text-left space-y-1 font-medium">
+                    <p>• Esta es tu <strong>ÚNICA advertencia</strong> autorizada.</p>
+                    <p>• Si vuelves a cambiar de ventana, salir de pantalla completa o minimizar el navegador, tu examen será <strong>anulado de inmediato</strong>.</p>
+                    <p>• El evento quedó registrado con fecha y hora en la auditoría del docente.</p>
+                </div>
                 <button id="btn-reanudar-tras-advertencia" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded text-xs transition">
-                    Entendido, Reanudar
+                    Entendido, Reanudar en Pantalla Completa
                 </button>
             </div>
         </div>
@@ -219,10 +224,16 @@
             <button onclick="location.reload()" class="bg-blue-700 text-white px-6 py-2 rounded text-xs font-semibold mt-4">Salir</button>
         </section>
 
+        <!-- VISTA DE SANCIÓN CERO TOLERANCIA -->
         <section id="vista-sancion-bloqueo" class="hidden bg-white rounded-lg shadow-sm border-2 border-red-500 p-8 text-center space-y-4">
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✕</div>
             <h2 class="text-2xl font-bold text-red-700">Evaluación Anulada</h2>
             <div class="bg-red-50 border border-red-200 text-red-800 font-medium text-xs p-3 rounded max-w-md mx-auto" id="sancion-detalle-final"></div>
+            <div class="bg-slate-50 border border-slate-200 rounded p-4 max-w-xs mx-auto">
+                <p class="text-xs uppercase font-semibold text-slate-500">Calificación Asignada</p>
+                <div class="text-4xl font-black text-red-600" id="sancion-nota-final">01</div>
+                <p class="text-[11px] text-red-500 mt-1">Sanción académica asentada en Firestore</p>
+            </div>
             <button onclick="location.reload()" class="bg-slate-700 text-white px-6 py-2 rounded text-xs font-semibold">Cerrar y Salir</button>
         </section>
 
@@ -303,6 +314,7 @@
                 <button id="tab-btn-perfil" class="py-2 border-b-2 border-transparent text-slate-500 px-3">8. Perfil</button>
             </div>
 
+            <!-- TABS CONTENIDO RESUMIDO -->
             <div id="tc-asistencia" class="bg-white p-6 rounded-b-lg border space-y-4">
                 <div class="flex justify-between border-b pb-4">
                     <h3 class="text-sm font-bold">Control Presencial en Aula</h3>
@@ -545,10 +557,11 @@
         onSnapshot(collection(db, "sesiones_examen"), snap => {
             sesionesActivas = []; snap.forEach(d => sesionesActivas.push({ id: d.id, ...d.data() }));
             renderTablaReanudacionDocente(); verificarSesionPendienteEstudiante(); evaluarSesionesEntregadasEnServidor();
+            if (estudianteSesion && !examenEnCurso) renderTableroEstudiante();
         });
 
         // ==========================================
-        // 8. AUTENTICACIÓN BIOMÉTRICA (V4.6 - Migración)
+        // 8. AUTENTICACIÓN BIOMÉTRICA (V4.7.1 - CORRECCIÓN DE REGISTRO)
         // ==========================================
         document.getElementById("tab-btn-ingreso").addEventListener("click", () => {
             document.getElementById("form-login-estudiante").classList.remove("hidden");
@@ -564,6 +577,7 @@
             document.getElementById("tab-btn-ingreso").classList.remove("bg-white", "text-blue-700", "shadow-sm");
         });
 
+        // REGISTRO CON BYPASS DE CACHÉ
         async function procesarRegistroEstudiante(huellaActiva) {
             const nom = document.getElementById("reg-nombre").value.trim();
             const ape = document.getElementById("reg-apellido").value.trim();
@@ -602,6 +616,8 @@
             }
 
             const passHash = await cifrarClave(pass);
+            
+            // 1. Guardamos en Firebase y ESPERAMOS a que termine por completo
             await setDoc(refEst, {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId,
@@ -609,10 +625,21 @@
                 fechaRegistro: new Date().toLocaleString()
             });
 
+            // 2. Notificamos al estudiante
             alert(`Registro completado. ${huellaActiva ? '¡Huella vinculada con éxito!' : 'Usando solo clave.'}`);
+            
+            // 3. Pasamos al Tab de Ingreso visualmente
             document.getElementById("tab-btn-ingreso").click();
             document.getElementById("login-cedula").value = ced;
             document.getElementById("login-password").value = "";
+            
+            // 4. Inyectamos los datos para evadir el delay de consulta de Firebase
+            const estData = {
+                nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
+                passwordHash: passHash, passkeyId: passkeyId, presenteAula: false
+            };
+            
+            iniciarSesionEstudianteExitoso(ced, estData);
         }
 
         document.getElementById("btn-completar-registro-huella").addEventListener("click", () => procesarRegistroEstudiante(true));
@@ -661,7 +688,7 @@
             }
         });
 
-        // NUEVO: VINCULAR HUELLA DESDE EL TABLERO (MIGRACIÓN ALUMNOS VIEJOS)
+        // VINCULAR HUELLA DESDE EL TABLERO (MIGRACIÓN ALUMNOS VIEJOS)
         document.getElementById("btn-vincular-huella-dash").addEventListener("click", async () => {
             if (!window.PublicKeyCredential) return alert("Tu navegador o teléfono no soporta WebAuthn.");
             try {
@@ -733,7 +760,7 @@
         });
 
         // ==========================================
-        // RENDERIZADO DEL TABLERO DEL ALUMNO
+        // RENDERIZADO DEL TABLERO DEL ALUMNO (V4.7 PARCHE VISUAL DE CACHÉ)
         // ==========================================
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
@@ -742,7 +769,6 @@
             document.getElementById("perfil-estudiante-bienvenida").innerText = `Hola, ${estudianteSesion.nombre} ${estudianteSesion.apellido}`;
             document.getElementById("perfil-estudiante-seccion").innerText = `C.I: ${estudianteSesion.cedula} • Sección: ${sec ? sec.nombre : 'No asignada'}`;
             
-            // Lógica para mostrar/ocultar el botón de vinculación de huella
             if (!estudianteSesion.passkeyId && window.PublicKeyCredential) {
                 document.getElementById("box-vincular-huella").classList.remove("hidden");
                 document.getElementById("box-vincular-huella").classList.add("flex");
@@ -765,6 +791,9 @@
             objs.forEach(obj => {
                 const mat = materias.find(m => m.id === obj.materiaId);
                 const calif = calificaciones.find(c => c.cedula === estudianteSesion.cedula && c.objetivoId === obj.id);
+                // V4.7 PROTECCIÓN VISUAL
+                const sesionPrevia = sesionesActivas.find(s => s.cedula === estudianteSesion.cedula && s.objetivoId === obj.id);
+                
                 const presente = estudianteSesion.presenteAula === true;
                 const inicioFormat = obj.horaInicio ? new Date(obj.horaInicio).toLocaleString() : 'N/A';
                 const finFormat = obj.horaFin ? new Date(obj.horaFin).toLocaleString() : 'N/A';
@@ -781,11 +810,19 @@
                         </div>
                         <div class="w-full sm:w-auto mt-2 sm:mt-0">
                 `;
+                
+                // LÓGICA DE VISUALIZACIÓN BLINDADA
                 if (calif) {
                     h += `<div class="flex flex-col sm:flex-row items-center gap-2">
                               <span class="bg-blue-100 text-blue-800 font-bold text-xs px-3 py-1.5 rounded text-center">Presentado (Nota: ${calif.nota}/${calif.ponderacionTotal})</span>
                               <button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-slate-200 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded border">Ver Detalles</button>
                           </div>`;
+                } else if (sesionPrevia && sesionPrevia.estado === "entregado") {
+                    h += `<span class="text-xs text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2 rounded font-bold text-center block">Evaluación entregada (Pendiente calificación)</span>`;
+                } else if (sesionPrevia && (sesionPrevia.estado === "bloqueado_por_infracciones" || sesionPrevia.estado === "bloqueado_por_fraude")) {
+                    h += `<span class="text-xs text-red-700 bg-red-100 border border-red-300 px-3 py-2 rounded font-bold text-center block">Examen Anulado</span>`;
+                } else if (sesionPrevia && (sesionPrevia.estado === "en_curso" || sesionPrevia.estado === "reanudacion_permitida")) {
+                    h += `<span class="text-xs text-amber-700 bg-amber-50 border border-amber-300 px-3 py-2 rounded font-bold text-center block">Intento Interrumpido (Reanuda arriba)</span>`;
                 } else if (!presente) {
                     h += `<span class="text-xs text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded font-semibold text-center block">⚠️ Requiere Asistencia Aula</span>`;
                 } else if (obj.horaInicio && ahora < obj.horaInicio) {
@@ -831,9 +868,46 @@
         }
 
         // ==========================================
-        // INICIO DE EXAMEN Y ANTI-CHEAT
+        // 10. INICIO DE EXAMEN (V4.7 TRAMPA MORTAL - 00 DE CASTIGO)
         // ==========================================
         window.iniciarExamenAlumno = async function(objId) {
+            const sesionId = `${estudianteSesion.cedula}_${objId}`;
+
+            // TRAMPA MORTAL: FILTRO DE SEGURIDAD ESTRICTO CONTRA BORRADO DE CACHÉ
+            const sSnap = await getDoc(doc(db, "sesiones_examen", sesionId));
+            if (sSnap.exists()) {
+                const sData = sSnap.data();
+                if (sData.estado === "en_curso" || sData.estado === "reanudacion_permitida") {
+                    alert("Tienes un intento interrumpido. Utiliza el botón amarillo de 'Reanudar Evaluación'.");
+                    verificarSesionPendienteEstudiante(); renderTableroEstudiante(); return;
+                }
+
+                // SI INTENTA BURLAR EL SISTEMA ESTANDO ENTREGADO O BLOQUEADO -> CASTIGO 00 IRREVERSIBLE
+                objetivoActivo = objetivos.find(o => o.id === objId);
+                const matObj = materias.find(m => m.id === objetivoActivo?.materiaId);
+                
+                await updateDoc(doc(db, "sesiones_examen", sesionId), { estado: "bloqueado_por_fraude", strikes: 99, calificado: true, notaFinal: 0.0 });
+                const qC = query(collection(db, "calificaciones"), where("cedula", "==", estudianteSesion.cedula), where("objetivoId", "==", objId));
+                const snapC = await getDocs(qC);
+                snapC.forEach(async (d) => await deleteDoc(d.ref));
+
+                await addDoc(collection(db, "calificaciones"), {
+                    fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula,
+                    estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`,
+                    materiaNombre: matObj ? matObj.nombre : 'Cátedra', objetivoId: objId,
+                    objetivoNombre: objetivoActivo ? objetivoActivo.nombre : 'Examen',
+                    nota: 0.0, ponderacionTotal: objetivoActivo ? objetivoActivo.ponderacion : 20,
+                    sancionado: true, motivoSancion: "FRAUDE GRAVE: Intento de evadir la seguridad borrando caché o inyectando código."
+                });
+
+                document.getElementById("vista-estudiante-tablero").classList.add("hidden");
+                document.getElementById("vista-examen-activo").classList.add("hidden");
+                document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
+                document.getElementById("sancion-nota-final").innerText = "00";
+                document.getElementById("sancion-detalle-final").innerText = "VIOLACIÓN CRÍTICA: Intento de vulnerar el sistema borrando caché. Evaluación reprobada sin derecho a apelación.";
+                return;
+            }
+
             objetivoActivo = objetivos.find(o => o.id === objId);
             respuestasEstudiante = {}; strikeCount = 0;
             const ahora = Date.now();
@@ -845,14 +919,14 @@
             const pregs = []; snaps.forEach(d => pregs.push({ id: d.id, ...d.data() }));
             if (pregs.length === 0) return alert("Evaluación sin preguntas.");
             
-            const sesionId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
+            const matObj = materias.find(m => m.id === objetivoActivo.materiaId);
             await setDoc(doc(db, "sesiones_examen", sesionId), {
                 cedula: estudianteSesion.cedula, estudianteNombre: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`,
-                materiaNombre: materias.find(m => m.id === objetivoActivo.materiaId)?.nombre || 'Cátedra',
+                materiaNombre: matObj ? matObj.nombre : 'Cátedra',
                 objetivoId: objetivoActivo.id, objetivoNombre: objetivoActivo.nombre,
                 seccionId: estudianteSesion.seccionId, respuestas: {}, strikes: 0, estado: "en_curso",
                 calificado: false, fechaInicio: new Date().toLocaleString(), historialIncidencias: []
-            }, { merge: true });
+            });
 
             ejecutarPantallaExamen(pregs, false);
         };
@@ -917,7 +991,7 @@
         };
 
         // ==========================================
-        // 12. SISTEMA DE 1 ADVERTENCIA (TOLERANCIA)
+        // 12. SISTEMA DE 1 ADVERTENCIA Y SANCIONES
         // ==========================================
         function activarListenersSupervision() {
             document.addEventListener("visibilitychange", onCambioPestana);
@@ -954,13 +1028,18 @@
         document.getElementById("btn-reanudar-tras-advertencia").addEventListener("click", () => {
             document.getElementById("modal-advertencia").classList.add("hidden"); solicitarPantallaCompleta(); solicitarWakeLock();
         });
+
         async function ejecutarSancionDefinitiva01(motivo) {
             examenEnCurso = false; clearInterval(timerInterval); desactivarListenersSupervision(); liberarWakeLock();
             if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
             const sId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
             await updateDoc(doc(db, "sesiones_examen", sId), { estado: "bloqueado_por_infracciones", strikes: strikeCount }).catch(()=>{});
             await addDoc(collection(db, "calificaciones"), { fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula, estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`, objetivoId: objetivoActivo.id, nota: 1.0, ponderacionTotal: objetivoActivo.ponderacion, sancionado: true, motivoSancion: "Anulado por reincidencia." });
-            document.getElementById("modal-advertencia").classList.add("hidden"); document.getElementById("vista-examen-activo").classList.add("hidden"); document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
+            document.getElementById("modal-advertencia").classList.add("hidden"); 
+            document.getElementById("vista-examen-activo").classList.add("hidden"); 
+            document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
+            document.getElementById("sancion-nota-final").innerText = "01";
+            document.getElementById("sancion-detalle-final").innerText = motivo;
         }
 
         // ==========================================
@@ -1180,12 +1259,6 @@
             document.getElementById("tabla-evaluaciones-resumen").innerHTML = h + `</tbody></table>`;
         }
         window.toggleEstadoObjetivo = async (id, st) => await updateDoc(doc(db, "objetivos", id), { activo: st });
-        window.republicarExamen = async (id) => {
-            if(!confirm("¿Reiniciar para todos? Borra notas e intentos.")) return;
-            (await getDocs(query(collection(db, "sesiones_examen"), where("objetivoId", "==", id)))).forEach(async d=>await deleteDoc(d.ref));
-            (await getDocs(query(collection(db, "calificaciones"), where("objetivoId", "==", id)))).forEach(async d=>await deleteDoc(d.ref));
-            alert("Reiniciado");
-        };
         window.editarObjetivo = async (id) => {
             const o = objetivos.find(x=>x.id===id);
             if(!o) return;
