@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.5 (Biometría Estricta)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.6 (Migración a Biometría)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -118,6 +118,17 @@
                 </div>
                 <button id="btn-cerrar-sesion-est" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded self-start font-medium">
                     Cerrar Sesión Segura
+                </button>
+            </div>
+
+            <!-- BOTÓN DE MIGRACIÓN PARA ALUMNOS ANTIGUOS -->
+            <div id="box-vincular-huella" class="hidden p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h4 class="font-bold text-blue-900 text-sm">Mejora la seguridad de tu cuenta</h4>
+                    <p class="text-xs text-blue-700 mt-1">Aún no has vinculado tu huella dactilar para agilizar tu acceso a la plataforma.</p>
+                </div>
+                <button id="btn-vincular-huella-dash" class="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2.5 rounded text-xs flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+                    <span class="text-base">👆</span> Vincular Huella Dactilar
                 </button>
             </div>
 
@@ -292,7 +303,6 @@
                 <button id="tab-btn-perfil" class="py-2 border-b-2 border-transparent text-slate-500 px-3">8. Perfil</button>
             </div>
 
-            <!-- TABS CONTENIDO RESUMIDO PARA EL ARCHIVO -->
             <div id="tc-asistencia" class="bg-white p-6 rounded-b-lg border space-y-4">
                 <div class="flex justify-between border-b pb-4">
                     <h3 class="text-sm font-bold">Control Presencial en Aula</h3>
@@ -435,7 +445,6 @@
             return ced.trim().toUpperCase().replace(/\s+/g, '');
         }
 
-        // Utilidades para convertir buffers de Huella Biométrica a Base64
         function bufferToBase64url(buffer) {
             const bytes = new Uint8Array(buffer);
             let str = '';
@@ -496,7 +505,7 @@
         });
 
         // ==========================================
-        // 4. SINCRONIZACIÓN Y PERSISTENCIA (V4.4 FIX)
+        // 4. SINCRONIZACIÓN Y PERSISTENCIA 
         // ==========================================
         const docenteRef = doc(db, "configuracion", "docente");
         getDoc(docenteRef).then(async snap => {
@@ -539,7 +548,7 @@
         });
 
         // ==========================================
-        // 8. AUTENTICACIÓN BIOMÉTRICA (V4.5)
+        // 8. AUTENTICACIÓN BIOMÉTRICA (V4.6 - Migración)
         // ==========================================
         document.getElementById("tab-btn-ingreso").addEventListener("click", () => {
             document.getElementById("form-login-estudiante").classList.remove("hidden");
@@ -574,35 +583,28 @@
 
             let passkeyId = null;
 
-            // BLOQUE WEBAUTHN PARA CREAR HUELLA
             if (huellaActiva) {
                 if (!window.PublicKeyCredential) return alert("Tu dispositivo o navegador no soporta el escáner de huellas de forma nativa (WebAuthn).");
                 try {
                     const publicKeyCredParams = {
                         challenge: crypto.getRandomValues(new Uint8Array(32)),
                         rp: { name: "Evaluaciones Telemática" },
-                        user: {
-                            id: Uint8Array.from(ced, c => c.charCodeAt(0)),
-                            name: ced,
-                            displayName: `${nom} ${ape}`
-                        },
+                        user: { id: Uint8Array.from(ced, c => c.charCodeAt(0)), name: ced, displayName: `${nom} ${ape}` },
                         pubKeyCredParams: [{ alg: -7, type: "public-key" }],
                         authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-                        timeout: 60000,
-                        attestation: "none"
+                        timeout: 60000, attestation: "none"
                     };
                     const credential = await navigator.credentials.create({ publicKey: publicKeyCredParams });
                     passkeyId = bufferToBase64url(credential.rawId);
                 } catch(err) {
-                    return alert("Error al leer la huella dactilar o proceso cancelado. Intenta registrarte solo con contraseña. Detalle: " + err.message);
+                    return alert("Error al leer la huella dactilar o proceso cancelado. Intenta registrarte solo con contraseña.");
                 }
             }
 
             const passHash = await cifrarClave(pass);
             await setDoc(refEst, {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
-                passwordHash: passHash,
-                passkeyId: passkeyId, // Guarda la huella si existe
+                passwordHash: passHash, passkeyId: passkeyId,
                 presenteAula: false, tokenSesionActivo: null, enLinea: false,
                 fechaRegistro: new Date().toLocaleString()
             });
@@ -642,27 +644,45 @@
             if (!snapEst.exists()) return alert("Cédula no registrada.");
             
             const estData = snapEst.data();
-            if (!estData.passkeyId) return alert("No tienes ninguna huella registrada. Ingresa la contraseña tradicional, y dile al profesor que borre tu cuenta si deseas crearla de nuevo con huella.");
+            if (!estData.passkeyId) return alert("No tienes ninguna huella registrada. Ingresa la contraseña tradicional, y luego podrás vincular tu huella desde el tablero principal.");
 
             try {
                 const publicKeyRequestParams = {
                     challenge: crypto.getRandomValues(new Uint8Array(32)),
-                    allowCredentials: [{
-                        id: base64urlToBuffer(estData.passkeyId),
-                        type: 'public-key',
-                        transports: ['internal']
-                    }],
-                    userVerification: "required",
-                    timeout: 60000
+                    allowCredentials: [{ id: base64urlToBuffer(estData.passkeyId), type: 'public-key', transports: ['internal'] }],
+                    userVerification: "required", timeout: 60000
                 };
-                // Alerta al OS para que despliegue la huella
                 await navigator.credentials.get({ publicKey: publicKeyRequestParams });
                 
-                // Si pasa la línea anterior, la huella dactilar fue exitosa
-                document.getElementById("login-password").value = ""; // Vaciamos para seguridad visual
+                document.getElementById("login-password").value = ""; 
                 iniciarSesionEstudianteExitoso(ced, estData);
             } catch(err) {
                 alert("Huella no reconocida o escáner cancelado.");
+            }
+        });
+
+        // NUEVO: VINCULAR HUELLA DESDE EL TABLERO (MIGRACIÓN ALUMNOS VIEJOS)
+        document.getElementById("btn-vincular-huella-dash").addEventListener("click", async () => {
+            if (!window.PublicKeyCredential) return alert("Tu navegador o teléfono no soporta WebAuthn.");
+            try {
+                const publicKeyCredParams = {
+                    challenge: crypto.getRandomValues(new Uint8Array(32)),
+                    rp: { name: "Evaluaciones Telemática" },
+                    user: { id: Uint8Array.from(estudianteSesion.cedula, c => c.charCodeAt(0)), name: estudianteSesion.cedula, displayName: `${estudianteSesion.nombre} ${estudianteSesion.apellido}` },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+                    timeout: 60000, attestation: "none"
+                };
+                const credential = await navigator.credentials.create({ publicKey: publicKeyCredParams });
+                const nuevoPasskeyId = bufferToBase64url(credential.rawId);
+
+                await updateDoc(doc(db, "estudiantes", estudianteSesion.cedula), { passkeyId: nuevoPasskeyId });
+                estudianteSesion.passkeyId = nuevoPasskeyId;
+                
+                document.getElementById("box-vincular-huella").classList.add("hidden");
+                alert("¡Huella vinculada exitosamente! Ya podrás usar el botón verde la próxima vez que inicies sesión.");
+            } catch(err) {
+                alert("Proceso cancelado o error al leer huella.");
             }
         });
 
@@ -713,7 +733,7 @@
         });
 
         // ==========================================
-        // FASE 2: RENDERIZADO DEL TABLERO DEL ALUMNO
+        // RENDERIZADO DEL TABLERO DEL ALUMNO
         // ==========================================
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
@@ -721,6 +741,16 @@
             const sec = secciones.find(s => s.id === estudianteSesion.seccionId);
             document.getElementById("perfil-estudiante-bienvenida").innerText = `Hola, ${estudianteSesion.nombre} ${estudianteSesion.apellido}`;
             document.getElementById("perfil-estudiante-seccion").innerText = `C.I: ${estudianteSesion.cedula} • Sección: ${sec ? sec.nombre : 'No asignada'}`;
+            
+            // Lógica para mostrar/ocultar el botón de vinculación de huella
+            if (!estudianteSesion.passkeyId && window.PublicKeyCredential) {
+                document.getElementById("box-vincular-huella").classList.remove("hidden");
+                document.getElementById("box-vincular-huella").classList.add("flex");
+            } else {
+                document.getElementById("box-vincular-huella").classList.add("hidden");
+                document.getElementById("box-vincular-huella").classList.remove("flex");
+            }
+
             renderTableroEstudiante();
             verificarSesionPendienteEstudiante();
         }
