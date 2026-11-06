@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.7.1 (Estable y Segura)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.8 (Ingreso Robusto)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -561,7 +561,33 @@
         });
 
         // ==========================================
-        // 8. AUTENTICACIÓN BIOMÉTRICA (V4.7.1 - CORRECCIÓN DE REGISTRO)
+        // 8. BÚSQUEDA ROBUSTA (PARCHE DE "V-" Y GUIONES)
+        // ==========================================
+        async function buscarEstudianteRobusto(cedulaIngresada) {
+            const ced = normalizarCedula(cedulaIngresada);
+            let estData = null;
+            let estDocId = ced;
+
+            // 1. Intento de búsqueda exacta en la base de datos
+            const snapEst = await getDoc(doc(db, "estudiantes", ced));
+            if (snapEst.exists()) {
+                estData = snapEst.data();
+            } else {
+                // 2. Fallback inteligente: buscar en memoria limpiando letras (Ej: "V-123" vs "123")
+                const cedNum = ced.replace(/[^0-9]/g, '');
+                if (cedNum) {
+                    const estOld = estudiantes.find(e => e.cedula.replace(/[^0-9]/g, '') === cedNum);
+                    if (estOld) {
+                        estData = estOld;
+                        estDocId = estOld.id; // Tomamos el ID exacto con el que se registró
+                    }
+                }
+            }
+            return { estData, estDocId };
+        }
+
+        // ==========================================
+        // 8.1 AUTENTICACIÓN BIOMÉTRICA
         // ==========================================
         document.getElementById("tab-btn-ingreso").addEventListener("click", () => {
             document.getElementById("form-login-estudiante").classList.remove("hidden");
@@ -591,9 +617,8 @@
                 return;
             }
 
-            const refEst = doc(db, "estudiantes", ced);
-            const snapEst = await getDoc(refEst);
-            if (snapEst.exists()) return alert(`Error: La cédula ${ced} ya existe.`);
+            const { estData } = await buscarEstudianteRobusto(ced);
+            if (estData) return alert(`Error: La cédula ${ced} ya existe en el sistema.`);
 
             let passkeyId = null;
 
@@ -618,7 +643,7 @@
             const passHash = await cifrarClave(pass);
             
             // 1. Guardamos en Firebase y ESPERAMOS a que termine por completo
-            await setDoc(refEst, {
+            await setDoc(doc(db, "estudiantes", ced), {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId,
                 presenteAula: false, tokenSesionActivo: null, enLinea: false,
@@ -634,12 +659,12 @@
             document.getElementById("login-password").value = "";
             
             // 4. Inyectamos los datos para evadir el delay de consulta de Firebase
-            const estData = {
+            const nData = {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId, presenteAula: false
             };
             
-            iniciarSesionEstudianteExitoso(ced, estData);
+            iniciarSesionEstudianteExitoso(ced, nData);
         }
 
         document.getElementById("btn-completar-registro-huella").addEventListener("click", () => procesarRegistroEstudiante(true));
@@ -648,29 +673,30 @@
         // LOGIN CON CONTRASEÑA TRADICIONAL
         document.getElementById("form-login-estudiante").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const ced = normalizarCedula(document.getElementById("login-cedula").value);
+            const cedIngresada = document.getElementById("login-cedula").value;
             const pass = document.getElementById("login-password").value.trim();
-            if (!ced || !pass) return alert("Ingresa tu cédula y contraseña.");
+            
+            if (!cedIngresada || !pass) return alert("Ingresa tu cédula y contraseña.");
 
-            const snapEst = await getDoc(doc(db, "estudiantes", ced));
-            if (!snapEst.exists()) return alert("Cédula no registrada.");
+            const { estData, estDocId } = await buscarEstudianteRobusto(cedIngresada);
+
+            if (!estData) return alert("Cédula no registrada en el sistema. Verifica si la escribiste correctamente.");
             
-            const estData = snapEst.data();
             const passHash = await cifrarClave(pass);
+            if (estData.passwordHash !== passHash && estData.password !== pass) return alert("Contraseña incorrecta.");
             
-            if (estData.passwordHash !== passHash) return alert("Contraseña incorrecta.");
-            iniciarSesionEstudianteExitoso(ced, estData);
+            iniciarSesionEstudianteExitoso(estDocId, estData);
         });
 
         // LOGIN ESTRICTO CON HUELLA DACTILAR
         document.getElementById("btn-iniciar-huella").addEventListener("click", async () => {
-            const ced = normalizarCedula(document.getElementById("login-cedula").value);
-            if (!ced) return alert("Primero escribe tu cédula de identidad para buscar tu huella.");
+            const cedIngresada = document.getElementById("login-cedula").value;
+            if (!cedIngresada) return alert("Primero escribe tu cédula de identidad para buscar tu huella.");
 
-            const snapEst = await getDoc(doc(db, "estudiantes", ced));
-            if (!snapEst.exists()) return alert("Cédula no registrada.");
+            const { estData, estDocId } = await buscarEstudianteRobusto(cedIngresada);
+
+            if (!estData) return alert("Cédula no registrada en el sistema.");
             
-            const estData = snapEst.data();
             if (!estData.passkeyId) return alert("No tienes ninguna huella registrada. Ingresa la contraseña tradicional, y luego podrás vincular tu huella desde el tablero principal.");
 
             try {
@@ -682,7 +708,7 @@
                 await navigator.credentials.get({ publicKey: publicKeyRequestParams });
                 
                 document.getElementById("login-password").value = ""; 
-                iniciarSesionEstudianteExitoso(ced, estData);
+                iniciarSesionEstudianteExitoso(estDocId, estData);
             } catch(err) {
                 alert("Huella no reconocida o escáner cancelado.");
             }
@@ -703,7 +729,7 @@
                 const credential = await navigator.credentials.create({ publicKey: publicKeyCredParams });
                 const nuevoPasskeyId = bufferToBase64url(credential.rawId);
 
-                await updateDoc(doc(db, "estudiantes", estudianteSesion.cedula), { passkeyId: nuevoPasskeyId });
+                await updateDoc(doc(db, "estudiantes", estudianteSesion.id), { passkeyId: nuevoPasskeyId });
                 estudianteSesion.passkeyId = nuevoPasskeyId;
                 
                 document.getElementById("box-vincular-huella").classList.add("hidden");
@@ -713,12 +739,12 @@
             }
         });
 
-        async function iniciarSesionEstudianteExitoso(ced, estData) {
+        async function iniciarSesionEstudianteExitoso(cedID, estData) {
             const tokenNuevo = (crypto.randomUUID ? crypto.randomUUID() : 'tok_' + Math.random().toString(36).substring(2) + Date.now());
             sessionStorage.setItem("token_sesion_estudiante", tokenNuevo);
-            await updateDoc(doc(db, "estudiantes", ced), { tokenSesionActivo: tokenNuevo, enLinea: true });
-            estudianteSesion = { id: ced, ...estData, cedula: ced };
-            activarVigilanciaConexionUnica(ced, tokenNuevo);
+            await updateDoc(doc(db, "estudiantes", cedID), { tokenSesionActivo: tokenNuevo, enLinea: true });
+            estudianteSesion = { id: cedID, ...estData, cedula: estData.cedula };
+            activarVigilanciaConexionUnica(cedID, tokenNuevo);
             mostrarTableroEstudiante();
         }
 
@@ -1259,6 +1285,12 @@
             document.getElementById("tabla-evaluaciones-resumen").innerHTML = h + `</tbody></table>`;
         }
         window.toggleEstadoObjetivo = async (id, st) => await updateDoc(doc(db, "objetivos", id), { activo: st });
+        window.republicarExamen = async (id) => {
+            if(!confirm("¿Reiniciar para todos? Borra notas e intentos.")) return;
+            (await getDocs(query(collection(db, "sesiones_examen"), where("objetivoId", "==", id)))).forEach(async d=>await deleteDoc(d.ref));
+            (await getDocs(query(collection(db, "calificaciones"), where("objetivoId", "==", id)))).forEach(async d=>await deleteDoc(d.ref));
+            alert("Reiniciado");
+        };
         window.editarObjetivo = async (id) => {
             const o = objetivos.find(x=>x.id===id);
             if(!o) return;
