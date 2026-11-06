@@ -54,11 +54,11 @@
             <div id="form-login-estudiante" class="space-y-4 max-w-md mx-auto">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Cédula de Identidad</label>
-                    <input type="text" id="login-cedula" placeholder="Ej. V-25123456" class="w-full border border-slate-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono">
+                    <input type="text" id="login-cedula" autocomplete="username" placeholder="Ej. V-25123456" class="w-full border border-slate-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
-                    <input type="password" id="login-password" placeholder="Tu contraseña registrada" class="w-full border border-slate-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-blue-600">
+                    <input type="password" id="login-password" autocomplete="current-password" placeholder="Tu contraseña registrada" class="w-full border border-slate-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-blue-600">
                 </div>
                 <button id="btn-iniciar-sesion-est" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded text-xs transition">
                     Ingresar al Aula de Evaluación
@@ -87,9 +87,9 @@
                         <option value="">-- Elige tu sección --</option>
                     </select>
                 </div>
-                <div>
+               <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Crear Contraseña (Cifrado Irreversible SHA-256)</label>
-                    <input type="password" id="reg-password" placeholder="Mínimo 4 caracteres" class="w-full border border-slate-300 rounded p-2 text-xs outline-none">
+                    <input type="password" id="reg-password" autocomplete="new-password" placeholder="Mínimo 4 caracteres" class="w-full border border-slate-300 rounded p-2 text-xs outline-none">
                 </div>
                 <button id="btn-completar-registro" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded text-xs transition">
                     Crear Cuenta de Estudiante
@@ -646,27 +646,28 @@
         // ==========================================
         // 4. SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE
         // ==========================================
-        onSnapshot(doc(db, "configuracion", "docente"), async snap => {
-            if (snap.exists()) {
-                const data = snap.data();
-                docentePerfil = { ...docentePerfil, ...data };
-                if (data.pin && !data.pinHash) {
-                    const hashed = await cifrarClave(data.pin);
-                    docentePerfil.pinHash = hashed;
-                    delete docentePerfil.pin;
-                    await updateDoc(doc(db, "configuracion", "docente"), { pinHash: hashed, pin: null });
-                }
-            } else {
+        const docenteRef = doc(db, "configuracion", "docente");
+
+        // 4.1 Inicialización Segura en Servidor (Evita falsos negativos de caché)
+        getDoc(docenteRef).then(async snap => {
+            if (!snap.exists()) {
                 const pinHashInicial = await cifrarClave("1234");
-                docentePerfil.pinHash = pinHashInicial;
-                setDoc(doc(db, "configuracion", "docente"), {
+                await setDoc(docenteRef, {
                     cedula: "",
                     nombre: "",
                     apellido: "",
                     pinHash: pinHashInicial
-                });
+                }, { merge: true }); // El merge protege de sobreescrituras accidentales
             }
-            actualizarInterfazDocente();
+        });
+
+        // 4.2 Escucha reactiva pasiva (Solo lee, JAMÁS sobreescribe)
+        onSnapshot(docenteRef, async snap => {
+            if (snap.exists()) {
+                const data = snap.data();
+                docentePerfil = { ...docentePerfil, ...data };
+                actualizarInterfazDocente();
+            }
         });
 
         onSnapshot(collection(db, "materias"), snap => {
