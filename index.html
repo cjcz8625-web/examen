@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.11 (Producción Final)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.11.2 (Producción Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -102,7 +102,7 @@
                     <label class="flex items-start space-x-2 cursor-pointer">
                         <input type="checkbox" id="reg-terminos" class="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" required>
                         <span class="text-[10px] text-slate-600 leading-tight">
-                            He leído y acepto los <a href="#" onclick="alert('1. Tu huella no sale del teléfono.\n2. La plataforma NO realiza capturas de pantalla ni instala software malicioso.\n3. Tu cuenta quedará ANCLADA a este dispositivo.\n4. Eres responsable de tu batería e internet.\n5. Salir de la pantalla anula el examen (01).\n6. Borrar la caché o intentar hackear el sistema genera un 00 irreversible.\n7. El docente no se responsabiliza por fallas en tu equipo.')" class="text-blue-700 font-bold underline">Términos de Uso, el Sistema Anti-Fraude y Descargo</a>.
+                            He leído y acepto los <a href="#" onclick="alert('1. Tu huella no sale del teléfono.\n2. La plataforma NO realiza capturas de pantalla ni instala software malicioso.\n3. Tu cuenta quedará ANCLADA a este dispositivo.\n4. Eres responsable de tu batería e internet.\n5. Salir de la pantalla anula el examen (01).\n6. Borrar la caché o intentar hackear el sistema genera un 01 irreversible.\n7. El docente no se responsabiliza por fallas en tu equipo.')" class="text-blue-700 font-bold underline">Términos de Uso, el Sistema Anti-Fraude y Descargo</a>.
                             <br><a href="terminos_condiciones.pdf" target="_blank" class="text-blue-700 font-bold inline-flex items-center mt-1"><span class="text-sm mr-1">📥</span> Descargar PDF Oficial</a>
                         </span>
                     </label>
@@ -146,7 +146,7 @@
 
             <div id="banner-reanudacion-disponible" class="hidden p-4 bg-amber-50 border-2 border-amber-400 rounded-lg space-y-2">
                 <div class="flex items-center space-x-2 text-amber-800 font-bold text-xs uppercase tracking-wide">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-50 animate-ping"></span>
                     <span>Progreso Guardado Detectado</span>
                 </div>
                 <p class="text-xs text-amber-700">Se encontró una evaluación interrumpida. Puedes continuar exactamente donde quedaste.</p>
@@ -188,14 +188,24 @@
                 </div>
             </div>
 
-            <div id="contenedor-preguntas-examen" class="space-y-6"></div>
+            <!-- ÁREA DE PREGUNTAS (1 POR PANTALLA) -->
+            <div id="contenedor-preguntas-examen" class="space-y-6 min-h-[150px]"></div>
+
+            <!-- CONTROLES DE PAGINACIÓN -->
+            <div id="controles-paginacion" class="flex justify-between items-center pt-2 pb-4">
+                <button id="btn-preg-anterior" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-5 py-2.5 rounded text-xs transition shadow-sm">⬅ Anterior</button>
+                <div class="flex-grow text-center">
+                    <span id="indicador-paginacion" class="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">Pregunta 1 de X</span>
+                </div>
+                <button id="btn-preg-siguiente" class="hidden bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded text-xs transition shadow-sm">Siguiente ➡</button>
+            </div>
 
             <div class="pt-6 border-t flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div class="flex items-center text-xs text-slate-500 space-x-2">
                     <span id="icono-guardando" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span id="txt-estado-guardado">Respuestas respaldadas en la nube</span>
                 </div>
-                <button id="btn-entregar-examen-final" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded text-xs transition shadow-sm">
+                <button id="btn-entregar-examen-final" class="hidden w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded text-xs transition shadow-sm">
                     Finalizar y Entregar Evaluación
                 </button>
             </div>
@@ -208,14 +218,14 @@
             <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center space-y-4 border-2 border-amber-500">
                 <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black">!</div>
                 <div>
-                    <span class="bg-amber-100 text-amber-900 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Única Advertencia Permitida</span>
+                    <span class="bg-amber-100 text-amber-900 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Advertencia de Supervisión</span>
                     <h3 class="text-lg font-bold text-slate-900 mt-2">Incidencia de Supervisión Detectada</h3>
                     <p id="modal-adv-motivo" class="text-xs text-slate-600 mt-1"></p>
                 </div>
                 <div class="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-700 text-left space-y-1 font-medium">
-                    <p>• Esta es tu <strong>ÚNICA advertencia</strong> autorizada.</p>
-                    <p>• Si vuelves a cambiar de ventana, salir de pantalla completa o minimizar el navegador, tu examen será <strong>anulado de inmediato</strong>.</p>
-                    <p>• El evento quedó registrado con fecha y hora en la auditoría del docente.</p>
+                    <p>• Tienes derecho a <strong>2 advertencias</strong> máximas.</p>
+                    <p>• A la tercera falta (cambiar de ventana, minimizar el navegador), tu examen será <strong>anulado de inmediato con nota de 01</strong>.</p>
+                    <p>• El evento ha quedado registrado en la auditoría del docente.</p>
                 </div>
                 <button id="btn-reanudar-tras-advertencia" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded text-xs transition">
                     Entendido, Reanudar en Pantalla Completa
@@ -234,7 +244,7 @@
                     <p><strong>2. Anclaje de Dispositivo:</strong> Tu cuenta quedará vinculada estrictamente al equipo desde donde inicies sesión hoy. Intentar usar otro equipo te bloqueará automáticamente.</p>
                     <p><strong>3. Responsabilidad Técnica:</strong> Eres responsable de contar con batería e internet durante la prueba. El docente no asume responsabilidad por fallas en tu equipo.</p>
                     <p><strong>4. Anti-Fraude (01):</strong> Cambiar de ventana, minimizar el navegador o dividir la pantalla generará advertencias y posterior anulación del examen con nota de 01.</p>
-                    <p class="text-red-700 font-bold">5. Tolerancia Cero al Fraude (00): Cualquier intento de evadir la seguridad, borrar la caché del navegador para reiniciar el examen o manipular el código, será castigado con un 00 definitivo e irreversible, sin derecho a apelación.</p>
+                    <p class="text-red-700 font-bold">5. Tolerancia Cero al Fraude (01): Cualquier intento de evadir la seguridad, borrar la caché del navegador para reiniciar el examen o manipular el código, será castigado con un 01 definitivo e irreversible, sin derecho a apelación.</p>
                     <p><strong>6. Descargo:</strong> El docente provee esta herramienta "tal cual" y no se hace responsable civil o académicamente por daños a dispositivos o pérdida de datos.</p>
                 </div>
 
@@ -585,6 +595,10 @@
         let strikeCount = 0; let ultimoIncidenteTimestamp = 0;
         let anchoInicial = window.innerWidth; let altoInicial = window.innerHeight;
 
+        // Variables de Paginación
+        let totalPreguntasActivas = 0;
+        let indicePreguntaActual = 0;
+
         // GENERADOR DE HUELLA DE DISPOSITIVO (Sustituto de MAC Address)
         function obtenerIdDispositivo() {
             let deviceId = localStorage.getItem("eval_device_uuid");
@@ -602,6 +616,47 @@
                 document.getElementById("vista-docente-panel").classList.remove("hidden");
             }
         });
+
+        // Controles de Paginación
+        document.getElementById("btn-preg-anterior").addEventListener("click", () => {
+            if (indicePreguntaActual > 0) {
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.remove("block");
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.add("hidden");
+                indicePreguntaActual--;
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.remove("hidden");
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.add("block");
+                actualizarControlesPaginacion();
+            }
+        });
+
+        document.getElementById("btn-preg-siguiente").addEventListener("click", () => {
+            if (indicePreguntaActual < totalPreguntasActivas - 1) {
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.remove("block");
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.add("hidden");
+                indicePreguntaActual++;
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.remove("hidden");
+                document.getElementById(`preg-card-${indicePreguntaActual}`).classList.add("block");
+                actualizarControlesPaginacion();
+            }
+        });
+
+        function actualizarControlesPaginacion() {
+            document.getElementById("indicador-paginacion").innerText = `Pregunta ${indicePreguntaActual + 1} de ${totalPreguntasActivas}`;
+            const btnAnt = document.getElementById("btn-preg-anterior");
+            const btnSig = document.getElementById("btn-preg-siguiente");
+            const btnEntregar = document.getElementById("btn-entregar-examen-final");
+
+            if (indicePreguntaActual === 0) btnAnt.classList.add("hidden");
+            else btnAnt.classList.remove("hidden");
+
+            if (indicePreguntaActual === totalPreguntasActivas - 1) {
+                btnSig.classList.add("hidden");
+                btnEntregar.classList.remove("hidden");
+            } else {
+                btnSig.classList.remove("hidden");
+                btnEntregar.classList.add("hidden");
+            }
+        }
 
         const docenteRef = doc(db, "configuracion", "docente");
         getDoc(docenteRef).then(async snap => {
@@ -783,7 +838,7 @@
             // 🛡️ BLOQUEO DE SEGUNDO EQUIPO (Anclaje Estricto)
             if (estData.dispositivoVinculado && estData.dispositivoVinculado !== currentDeviceId) {
                 alert("⛔ ACCESO DENEGADO: Tu cuenta ya está anclada a otro dispositivo. Por medidas anti-fraude, no puedes iniciar sesión desde este equipo.\n\nSi cambiaste de teléfono o perdiste el acceso, notifícalo al Docente para que libere tu equipo.");
-                return; // Corta la ejecución, bloqueando al intruso/segundo equipo
+                return; 
             }
             
             // Si es la primera vez que entra, anclamos este equipo a su base de datos
@@ -982,21 +1037,21 @@
                 objetivoActivo = objetivos.find(o => o.id === objId);
                 const matObj = materias.find(m => m.id === objetivoActivo?.materiaId);
                 
-                // TRAMPA MORTAL (00) POR INTENTO DE FRAUDE
-                await updateDoc(doc(db, "sesiones_examen", sesionId), { estado: "bloqueado_por_fraude", strikes: 99, calificado: true, notaFinal: 0.0 });
+                // TRAMPA MORTAL (01) POR INTENTO DE FRAUDE
+                await updateDoc(doc(db, "sesiones_examen", sesionId), { estado: "bloqueado_por_fraude", strikes: 99, calificado: true, notaFinal: 1.0 });
                 const qC = query(collection(db, "calificaciones"), where("cedula", "==", estudianteSesion.cedula), where("objetivoId", "==", objId));
                 const snapC = await getDocs(qC);
                 snapC.forEach(async (d) => await deleteDoc(d.ref));
                 await addDoc(collection(db, "calificaciones"), {
                     fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula, estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`,
                     materiaNombre: matObj ? matObj.nombre : 'Cátedra', objetivoId: objId, objetivoNombre: objetivoActivo ? objetivoActivo.nombre : 'Examen',
-                    nota: 0.0, ponderacionTotal: objetivoActivo ? objetivoActivo.ponderacion : 20,
-                    sancionado: true, motivoSancion: "FRAUDE GRAVE: Intento de evadir la seguridad borrando caché o inyectando código."
+                    nota: 1.0, ponderacionTotal: objetivoActivo ? objetivoActivo.ponderacion : 20,
+                    sancionado: true, motivoSancion: "FRAUDE GRAVE: Intento de evadir la seguridad borrando caché."
                 });
 
                 document.getElementById("vista-estudiante-tablero").classList.add("hidden"); document.getElementById("vista-examen-activo").classList.add("hidden"); document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
-                document.getElementById("sancion-nota-final").innerText = "00";
-                document.getElementById("sancion-detalle-final").innerText = "VIOLACIÓN CRÍTICA: Intento de vulnerar el sistema borrando caché. Evaluación reprobada sin derecho a apelación.";
+                document.getElementById("sancion-nota-final").innerText = "01";
+                document.getElementById("sancion-detalle-final").innerText = "VIOLACIÓN CRÍTICA: Intento de vulnerar el sistema borrando caché. Evaluación reprobada con 01 sin derecho a apelación.";
                 return;
             }
 
@@ -1031,11 +1086,18 @@
             document.getElementById("txt-examen-titulo").innerText = objetivoActivo.nombre;
             actualizarIndicadorStrikesVisual();
 
+            totalPreguntasActivas = pregs.length;
+            indicePreguntaActual = 0; // Reset index for pagination
+
             const cont = document.getElementById("contenedor-preguntas-examen");
             let h = '';
             pregs.forEach((p, idx) => {
                 const valG = respuestasEstudiante[p.id];
-                h += `<div class="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-2"><p class="font-bold text-xs sm:text-sm text-slate-800">${idx+1}. ${p.enunciado} <span class="text-blue-600 font-normal">(${p.valor} pts)</span></p><div class="space-y-1.5 text-xs">`;
+                const displayClass = idx === 0 ? "block" : "hidden"; // Hide all except the first one
+                
+                h += `<div id="preg-card-${idx}" class="pregunta-card ${displayClass} p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-2">
+                        <p class="font-bold text-xs sm:text-sm text-slate-800">${idx+1}. ${p.enunciado} <span class="text-blue-600 font-normal">(${p.valor} pts)</span></p>
+                        <div class="space-y-1.5 text-xs">`;
                 p.opciones.forEach((opc, oi) => {
                     const chk = (valG !== undefined && parseInt(valG) === oi) ? 'checked' : '';
                     h += `<label class="flex items-center space-x-2 p-2 bg-white border rounded cursor-pointer hover:bg-slate-100"><input type="radio" name="preg_${p.id}" value="${oi}" onchange="window.guardarRespuestaAutoguardado('${p.id}', ${oi})" ${chk}><span>${opc}</span></label>`;
@@ -1043,6 +1105,8 @@
                 h += `</div></div>`;
             });
             cont.innerHTML = h;
+            
+            actualizarControlesPaginacion();
 
             if (timerInterval) clearInterval(timerInterval);
             actualizarRelojTexto(); tiempoUltimaIteracion = performance.now();
@@ -1092,13 +1156,15 @@
             ultimoIncidenteTimestamp = ahora; strikeCount++; actualizarIndicadorStrikesVisual();
             const sesionId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
             updateDoc(doc(db, "sesiones_examen", sesionId), { strikes: strikeCount }).catch(()=>{});
-            if (strikeCount >= 2) ejecutarSancionDefinitiva01(desc);
+            
+            if (strikeCount >= 3) ejecutarSancionDefinitiva01(desc);
             else { document.getElementById("modal-adv-motivo").innerText = desc; document.getElementById("modal-advertencia").classList.remove("hidden"); }
         }
         function actualizarIndicadorStrikesVisual() {
             const el = document.getElementById("strike-1");
             if (strikeCount === 0) el.innerText = "Sin faltas";
-            else if (strikeCount === 1) { el.innerText = "1 Advertencia Usada"; el.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500 text-white font-bold animate-pulse"; }
+            else if (strikeCount === 1) { el.innerText = "1 Advertencia"; el.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500 text-white font-bold animate-pulse"; }
+            else if (strikeCount === 2) { el.innerText = "2 Advertencias (Peligro)"; el.className = "px-2 py-0.5 rounded text-[10px] bg-orange-600 text-white font-bold animate-pulse"; }
             else el.innerText = "Bloqueado";
         }
         document.getElementById("btn-reanudar-tras-advertencia").addEventListener("click", () => {
@@ -1150,7 +1216,9 @@
                 if (aprobadas.length > 0) htmlReporte += `<h4 class="font-bold text-emerald-700">Acertadas:</h4><ul class="mb-4">${aprobadas.join('')}</ul>`;
                 if (reprobadas.length > 0) htmlReporte += `<h4 class="font-bold text-red-700">Erradas/Vacías:</h4><ul>${reprobadas.join('')}</ul>`;
                 htmlReporte += `</div>`;
-                const notaFinal = totalNota.toFixed(2);
+                
+                let notaCalculada = totalNota < 1.0 ? 1.0 : totalNota;
+                const notaFinal = notaCalculada.toFixed(2);
 
                 await addDoc(collection(db, "calificaciones"), { 
                     fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula, estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`, 
@@ -1189,7 +1257,6 @@
         // LOGIN DOCENTE Y GESTIÓN DE CONTRASEÑA
         // ==========================================
         
-        // 1. Mostrar/Ocultar Contraseñas (Botón Ojito)
         document.querySelectorAll('.toggle-password').forEach(btn => {
             btn.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
@@ -1204,16 +1271,14 @@
             });
         });
 
-        // 2. Abrir Modal de Login (Reemplaza al prompt)
         document.getElementById("btn-login-docente").addEventListener("click", () => {
             document.getElementById("login-docente-pin").value = "";
-            document.getElementById("login-docente-pin").type = "password"; // Resetea el input
+            document.getElementById("login-docente-pin").type = "password"; 
             document.querySelector('[data-target="login-docente-pin"]').innerText = "👁️";
             document.getElementById("modal-login-docente").classList.remove("hidden");
             document.getElementById("login-docente-pin").focus();
         });
 
-        // 3. Procesar el Login desde el Modal
         document.getElementById("btn-confirmar-login-docente").addEventListener("click", async () => {
             const p = document.getElementById("login-docente-pin").value; 
             if (!p) return;
@@ -1387,7 +1452,6 @@
             alert("Reiniciado");
         };
 
-        // 🔴 SISTEMA DE EDICIÓN DE FECHAS ROBUSTO
         window.editarObjetivo = async (id) => {
             const o = objetivos.find(x => x.id === id);
             if(!o) return;
@@ -1490,7 +1554,7 @@
             await updateDoc(doc(db, "estudiantes", id), {
                 tokenSesionActivo: null, 
                 enLinea: false,
-                dispositivoVinculado: null // Esto rompe el candado del equipo anterior
+                dispositivoVinculado: null 
             }); 
             alert("Dispositivo y Sesiones liberados. El alumno ya puede ingresar desde un equipo nuevo."); 
         };
@@ -1548,7 +1612,6 @@
             alert("Guardado");
         });
         
-        // 4. Lógica de Cambio de Contraseña Fuerte en Pestaña Perfil
         document.getElementById("btn-actualizar-pin").addEventListener("click", async () => {
             const v = document.getElementById("pin-viejo").value; 
             const n = document.getElementById("pin-nuevo").value; 
@@ -1557,7 +1620,6 @@
             if(await cifrarClave(v) !== docentePerfil.pinHash) return alert("Contraseña actual incorrecta.");
             if(n !== c) return alert("Las contraseñas nuevas no coinciden.");
             
-            // Expresión Regular para: Al menos 6 chars, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial
             const regexComplejidad = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
             
             if(!regexComplejidad.test(n)) {
@@ -1567,7 +1629,6 @@
             await updateDoc(doc(db, "configuracion", "docente"), { pinHash: await cifrarClave(n), pin: null });
             alert("Contraseña actualizada con nivel de seguridad Alto."); 
             
-            // Limpiar inputs y resetear los ojitos
             document.getElementById("pin-viejo").value = ""; 
             document.getElementById("pin-nuevo").value = ""; 
             document.getElementById("pin-confirma").value = "";
