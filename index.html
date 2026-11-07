@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.8 (Motor de Filtros Pro)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.9 (Dashboard Estudiantil)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -139,6 +139,11 @@
                 </div>
                 <p class="text-xs text-amber-700">Se encontró una evaluación interrumpida. Puedes continuar exactamente donde quedaste.</p>
                 <button id="btn-reanudar-examen-guardado" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded text-xs shadow-sm">Reanudar Evaluación</button>
+            </div>
+
+            <!-- DASHBOARD DE RENDIMIENTO ESTUDIANTIL (NUEVO) -->
+            <div id="dashboard-estudiante-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3 hidden border-b border-slate-100 pb-5">
+                <!-- Se inyecta por JS -->
             </div>
 
             <div>
@@ -784,7 +789,7 @@
         });
 
         // ==========================================
-        // RENDERIZADO DEL TABLERO DEL ALUMNO
+        // RENDERIZADO DEL TABLERO Y DASHBOARD ESTUDIANTIL (V4.9)
         // ==========================================
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
@@ -807,8 +812,52 @@
 
         function renderTableroEstudiante() {
             const cont = document.getElementById("contenedor-evaluaciones-alumno");
+            const dashCont = document.getElementById("dashboard-estudiante-stats");
+            
+            // 1. LÓGICA DEL DASHBOARD DE RENDIMIENTO ESTUDIANTIL
+            const misCalificaciones = calificaciones.filter(c => c.cedula === estudianteSesion.cedula);
+            let totalPresentadas = misCalificaciones.length;
+            let notaAcumulada = 0;
+            let ponderacionAcumulada = 0;
+            
+            misCalificaciones.forEach(c => {
+                notaAcumulada += parseFloat(c.nota) || 0;
+                ponderacionAcumulada += parseFloat(c.ponderacionTotal) || 0;
+            });
+            
+            if (dashCont) {
+                if (totalPresentadas > 0) {
+                    dashCont.classList.remove("hidden");
+                    let porcentaje = ponderacionAcumulada > 0 ? Math.round((notaAcumulada * 100) / ponderacionAcumulada) : 0;
+                    let colorRendimiento = porcentaje >= 50 ? 'text-emerald-700' : 'text-red-600';
+                    
+                    dashCont.innerHTML = `
+                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg text-center shadow-sm">
+                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Evaluaciones</p>
+                            <p class="text-3xl font-black text-blue-900 mt-1">${totalPresentadas}</p>
+                        </div>
+                        <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg text-center shadow-sm">
+                            <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">Puntos Logrados</p>
+                            <p class="text-3xl font-black text-indigo-900 mt-1">${notaAcumulada.toFixed(2)}</p>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center shadow-sm">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Puntos Posibles</p>
+                            <p class="text-3xl font-black text-slate-700 mt-1">${ponderacionAcumulada.toFixed(2)}</p>
+                        </div>
+                        <div class="bg-white border ${porcentaje >= 50 ? 'border-emerald-200' : 'border-red-200'} p-4 rounded-lg text-center shadow-sm">
+                            <p class="text-[10px] font-bold ${porcentaje >= 50 ? 'text-emerald-600' : 'text-red-500'} uppercase tracking-wide">Rendimiento</p>
+                            <p class="text-3xl font-black ${colorRendimiento} mt-1">${porcentaje}%</p>
+                        </div>
+                    `;
+                } else {
+                    dashCont.classList.add("hidden");
+                    dashCont.innerHTML = "";
+                }
+            }
+
+            // 2. LÓGICA DE LA LISTA DE EXÁMENES
             const objs = objetivos.filter(o => o.activo && o.seccionesAutorizadas && o.seccionesAutorizadas.includes(estudianteSesion.seccionId));
-            if (objs.length === 0) return cont.innerHTML = '<p class="text-xs text-slate-400 py-3">No hay evaluaciones programadas.</p>';
+            if (objs.length === 0) return cont.innerHTML = '<p class="text-xs text-slate-400 py-3">No hay evaluaciones programadas para tu sección.</p>';
 
             let h = '';
             const ahora = Date.now();
@@ -836,8 +885,8 @@
                 
                 if (calif) {
                     h += `<div class="flex flex-col sm:flex-row items-center gap-2">
-                              <span class="bg-blue-100 text-blue-800 font-bold text-xs px-3 py-1.5 rounded text-center">Presentado (Nota: ${calif.nota}/${calif.ponderacionTotal})</span>
-                              <button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-slate-200 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded border">Ver Detalles</button>
+                              <span class="bg-emerald-100 text-emerald-800 font-bold text-xs px-3 py-1.5 rounded text-center border border-emerald-200">✅ Calificado: ${calif.nota} / ${calif.ponderacionTotal} pts</span>
+                              <button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-white hover:bg-slate-50 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded border border-slate-300 shadow-sm transition">Ver Corrección</button>
                           </div>`;
                 } else if (sesionPrevia && sesionPrevia.estado === "entregado") {
                     h += `<span class="text-xs text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2 rounded font-bold text-center block">Evaluación entregada (Pendiente calificación)</span>`;
@@ -903,7 +952,6 @@
                     verificarSesionPendienteEstudiante(); renderTableroEstudiante(); return;
                 }
 
-                // SI INTENTA BURLAR EL SISTEMA -> CASTIGO 00 IRREVERSIBLE
                 objetivoActivo = objetivos.find(o => o.id === objId);
                 const matObj = materias.find(m => m.id === objetivoActivo?.materiaId);
                 
@@ -1279,7 +1327,6 @@
         });
         
         function renderObjetivosSelectores() {
-            // Actualiza también el select de filtros dinámicamente sin romper la selección
             const m = document.getElementById("filtro-calif-mat").value;
             const objSel = document.getElementById("filtro-calif-obj");
             const valActual = objSel.value;
