@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.8 (Ingreso Robusto)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.8 (Motor de Filtros Pro)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -316,12 +316,13 @@
 
             <!-- TABS CONTENIDO RESUMIDO -->
             <div id="tc-asistencia" class="bg-white p-6 rounded-b-lg border space-y-4">
-                <div class="flex justify-between border-b pb-4">
+                <div class="flex flex-col sm:flex-row justify-between border-b pb-4 gap-2">
                     <h3 class="text-sm font-bold">Control Presencial en Aula</h3>
-                    <div class="flex space-x-2">
-                        <select id="filtro-asistencia-seccion" class="border p-1 rounded text-xs"></select>
-                        <button id="btn-todos-presentes" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs">Marcar Todos</button>
-                        <button id="btn-todos-ausentes" class="bg-slate-500 text-white px-2 py-1 rounded text-xs">Desmarcar</button>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <input type="text" id="filtro-asistencia-txt" placeholder="🔍 Buscar alumno..." class="border p-1.5 rounded text-xs w-full sm:w-48 outline-none">
+                        <select id="filtro-asistencia-seccion" class="border p-1.5 rounded text-xs bg-slate-50"></select>
+                        <button id="btn-todos-presentes" class="bg-emerald-600 text-white px-2 py-1.5 rounded text-xs">Marcar Todos</button>
+                        <button id="btn-todos-ausentes" class="bg-slate-500 text-white px-2 py-1.5 rounded text-xs">Desmarcar</button>
                     </div>
                 </div>
                 <div id="tabla-asistencia-contenedor" class="overflow-x-auto text-xs"></div>
@@ -391,19 +392,23 @@
             </div>
 
             <div id="tc-alumnos" class="hidden bg-white p-6 rounded-b-lg border space-y-4">
-                <div class="flex justify-between border-b pb-3">
+                <div class="flex flex-col sm:flex-row justify-between border-b pb-3 gap-2">
                     <h3 class="text-sm font-bold">Gestión de Alumnos</h3>
-                    <select id="filtro-alumnos-sec" class="border p-1.5 rounded text-xs bg-slate-50"><option value="TODAS">Todas</option></select>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <input type="text" id="filtro-alumnos-txt" placeholder="🔍 Buscar cédula o nombre..." class="border p-1.5 rounded text-xs w-full sm:w-48 outline-none">
+                        <select id="filtro-alumnos-sec" class="border p-1.5 rounded text-xs bg-slate-50"><option value="TODAS">Todas las Secciones</option></select>
+                    </div>
                 </div>
                 <div id="tabla-alumnos-gestion" class="overflow-x-auto text-xs"></div>
             </div>
 
             <div id="tc-calificaciones" class="hidden bg-white p-6 rounded-b-lg border space-y-4">
-                <div class="flex justify-between border-b pb-3">
+                <div class="flex flex-col sm:flex-row justify-between border-b pb-3 gap-2">
                     <h3 class="text-sm font-bold">Calificaciones (Auditadas)</h3>
-                    <div class="flex gap-2">
-                        <select id="filtro-calif-mat" class="border p-1.5 rounded text-xs"><option value="TODAS">Materia</option></select>
-                        <select id="filtro-calif-obj" class="border p-1.5 rounded text-xs"><option value="TODOS">Objetivo</option></select>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                        <input type="text" id="filtro-calif-txt" placeholder="🔍 Buscar alumno..." class="border p-1.5 rounded text-xs w-full sm:w-48 outline-none">
+                        <select id="filtro-calif-mat" class="border p-1.5 rounded text-xs bg-slate-50"><option value="TODAS">Todas las Materias</option></select>
+                        <select id="filtro-calif-obj" class="border p-1.5 rounded text-xs bg-slate-50"><option value="TODOS">Todos los Objetivos</option></select>
                     </div>
                 </div>
                 <div id="tabla-calificaciones-final" class="overflow-x-auto text-xs"></div>
@@ -557,7 +562,7 @@
         onSnapshot(collection(db, "sesiones_examen"), snap => {
             sesionesActivas = []; snap.forEach(d => sesionesActivas.push({ id: d.id, ...d.data() }));
             renderTablaReanudacionDocente(); verificarSesionPendienteEstudiante(); evaluarSesionesEntregadasEnServidor();
-            if (estudianteSesion && !examenEnCurso) renderTableroEstudiante();
+            if (estudianteSesion && !examenEnCurso) renderTableroEstudiante(); // Refresca en vivo si un intento cambia de estado
         });
 
         // ==========================================
@@ -568,18 +573,16 @@
             let estData = null;
             let estDocId = ced;
 
-            // 1. Intento de búsqueda exacta en la base de datos
             const snapEst = await getDoc(doc(db, "estudiantes", ced));
             if (snapEst.exists()) {
                 estData = snapEst.data();
             } else {
-                // 2. Fallback inteligente: buscar en memoria limpiando letras (Ej: "V-123" vs "123")
                 const cedNum = ced.replace(/[^0-9]/g, '');
                 if (cedNum) {
                     const estOld = estudiantes.find(e => e.cedula.replace(/[^0-9]/g, '') === cedNum);
                     if (estOld) {
                         estData = estOld;
-                        estDocId = estOld.id; // Tomamos el ID exacto con el que se registró
+                        estDocId = estOld.id; 
                     }
                 }
             }
@@ -603,7 +606,6 @@
             document.getElementById("tab-btn-ingreso").classList.remove("bg-white", "text-blue-700", "shadow-sm");
         });
 
-        // REGISTRO CON BYPASS DE CACHÉ
         async function procesarRegistroEstudiante(huellaActiva) {
             const nom = document.getElementById("reg-nombre").value.trim();
             const ape = document.getElementById("reg-apellido").value.trim();
@@ -642,7 +644,6 @@
 
             const passHash = await cifrarClave(pass);
             
-            // 1. Guardamos en Firebase y ESPERAMOS a que termine por completo
             await setDoc(doc(db, "estudiantes", ced), {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId,
@@ -650,15 +651,12 @@
                 fechaRegistro: new Date().toLocaleString()
             });
 
-            // 2. Notificamos al estudiante
             alert(`Registro completado. ${huellaActiva ? '¡Huella vinculada con éxito!' : 'Usando solo clave.'}`);
             
-            // 3. Pasamos al Tab de Ingreso visualmente
             document.getElementById("tab-btn-ingreso").click();
             document.getElementById("login-cedula").value = ced;
             document.getElementById("login-password").value = "";
             
-            // 4. Inyectamos los datos para evadir el delay de consulta de Firebase
             const nData = {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId, presenteAula: false
@@ -714,7 +712,7 @@
             }
         });
 
-        // VINCULAR HUELLA DESDE EL TABLERO (MIGRACIÓN ALUMNOS VIEJOS)
+        // VINCULAR HUELLA DESDE EL TABLERO
         document.getElementById("btn-vincular-huella-dash").addEventListener("click", async () => {
             if (!window.PublicKeyCredential) return alert("Tu navegador o teléfono no soporta WebAuthn.");
             try {
@@ -786,7 +784,7 @@
         });
 
         // ==========================================
-        // RENDERIZADO DEL TABLERO DEL ALUMNO (V4.7 PARCHE VISUAL DE CACHÉ)
+        // RENDERIZADO DEL TABLERO DEL ALUMNO
         // ==========================================
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
@@ -817,7 +815,6 @@
             objs.forEach(obj => {
                 const mat = materias.find(m => m.id === obj.materiaId);
                 const calif = calificaciones.find(c => c.cedula === estudianteSesion.cedula && c.objetivoId === obj.id);
-                // V4.7 PROTECCIÓN VISUAL
                 const sesionPrevia = sesionesActivas.find(s => s.cedula === estudianteSesion.cedula && s.objetivoId === obj.id);
                 
                 const presente = estudianteSesion.presenteAula === true;
@@ -837,7 +834,6 @@
                         <div class="w-full sm:w-auto mt-2 sm:mt-0">
                 `;
                 
-                // LÓGICA DE VISUALIZACIÓN BLINDADA
                 if (calif) {
                     h += `<div class="flex flex-col sm:flex-row items-center gap-2">
                               <span class="bg-blue-100 text-blue-800 font-bold text-xs px-3 py-1.5 rounded text-center">Presentado (Nota: ${calif.nota}/${calif.ponderacionTotal})</span>
@@ -894,12 +890,11 @@
         }
 
         // ==========================================
-        // 10. INICIO DE EXAMEN (V4.7 TRAMPA MORTAL - 00 DE CASTIGO)
+        // 10. INICIO DE EXAMEN Y TRAMPA 00
         // ==========================================
         window.iniciarExamenAlumno = async function(objId) {
             const sesionId = `${estudianteSesion.cedula}_${objId}`;
 
-            // TRAMPA MORTAL: FILTRO DE SEGURIDAD ESTRICTO CONTRA BORRADO DE CACHÉ
             const sSnap = await getDoc(doc(db, "sesiones_examen", sesionId));
             if (sSnap.exists()) {
                 const sData = sSnap.data();
@@ -908,7 +903,7 @@
                     verificarSesionPendienteEstudiante(); renderTableroEstudiante(); return;
                 }
 
-                // SI INTENTA BURLAR EL SISTEMA ESTANDO ENTREGADO O BLOQUEADO -> CASTIGO 00 IRREVERSIBLE
+                // SI INTENTA BURLAR EL SISTEMA -> CASTIGO 00 IRREVERSIBLE
                 objetivoActivo = objetivos.find(o => o.id === objId);
                 const matObj = materias.find(m => m.id === objetivoActivo?.materiaId);
                 
@@ -1176,13 +1171,24 @@
             });
         });
 
-        // TAB 1 ASISTENCIA
+        // ==========================================
+        // TAB 1: ASISTENCIA (AHORA CON BUSCADOR)
+        // ==========================================
         document.getElementById("filtro-asistencia-seccion").addEventListener("change", renderTablaAsistencia);
+        document.getElementById("filtro-asistencia-txt").addEventListener("input", renderTablaAsistencia);
+        
         function renderTablaAsistencia() {
             const secId = document.getElementById("filtro-asistencia-seccion").value;
+            const txt = (document.getElementById("filtro-asistencia-txt").value || "").toLowerCase();
             const cont = document.getElementById("tabla-asistencia-contenedor");
-            const alums = estudiantes.filter(e => e.seccionId === secId);
-            if (!secId || alums.length === 0) return cont.innerHTML = '<p class="text-slate-400 py-3">No hay estudiantes.</p>';
+            
+            if (!secId) return cont.innerHTML = '<p class="text-slate-400 py-3">Selecciona una sección para listar alumnos.</p>';
+            
+            let alums = estudiantes.filter(e => e.seccionId === secId);
+            if(txt) alums = alums.filter(e => e.cedula.toLowerCase().includes(txt) || e.nombre.toLowerCase().includes(txt) || e.apellido.toLowerCase().includes(txt));
+
+            if (alums.length === 0) return cont.innerHTML = '<p class="text-slate-400 py-3">No hay estudiantes que coincidan.</p>';
+            
             let h = `<table class="w-full border-collapse border"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Estudiante</th><th class="border p-2 text-center">Asistencia</th></tr></thead><tbody>`;
             alums.forEach(a => { h += `<tr><td class="border p-2">${a.cedula}</td><td class="border p-2">${a.nombre} ${a.apellido}</td><td class="border p-2 text-center"><input type="checkbox" onchange="window.toggleAsistencia('${a.id}', this.checked)" ${a.presenteAula ? 'checked' : ''}></td></tr>`; });
             cont.innerHTML = h + '</tbody></table>';
@@ -1236,12 +1242,12 @@
         function renderMateriasSelectores() {
             const h = '<option value="">-- Elige --</option>' + materias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
             document.getElementById("sec-mat-select").innerHTML = h; document.getElementById("eval-mat-select").innerHTML = h; document.getElementById("doc-preg-mat").innerHTML = h;
-            document.getElementById("filtro-calif-mat").innerHTML = '<option value="TODAS">Materia</option>' + h;
+            document.getElementById("filtro-calif-mat").innerHTML = '<option value="TODAS">Todas las Materias</option>' + h;
         }
         function renderSeccionesSelectores() {
             const h = '<option value="">-- Elige --</option>' + secciones.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
             document.getElementById("reg-seccion").innerHTML = h; document.getElementById("filtro-asistencia-seccion").innerHTML = h; document.getElementById("edit-alum-sec").innerHTML = h;
-            document.getElementById("filtro-alumnos-sec").innerHTML = '<option value="TODAS">Todas</option>' + h;
+            document.getElementById("filtro-alumnos-sec").innerHTML = '<option value="TODAS">Todas las Secciones</option>' + h;
             renderCheckboxesSeccionesObjetivo();
         }
         function renderTablaMateriasResumen() {
@@ -1271,8 +1277,18 @@
             if(tf <= ti) return alert("Cierre debe ser mayor");
             await addDoc(collection(db, "objetivos"), { materiaId: m, nombre: n, ponderacion: p, horaInicio: ti, horaFin: tf, seccionesAutorizadas: cb, activo: true });
         });
+        
         function renderObjetivosSelectores() {
-            document.getElementById("filtro-calif-obj").innerHTML = '<option value="TODOS">Objetivos</option>' + objetivos.map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('');
+            // Actualiza también el select de filtros dinámicamente sin romper la selección
+            const m = document.getElementById("filtro-calif-mat").value;
+            const objSel = document.getElementById("filtro-calif-obj");
+            const valActual = objSel.value;
+            
+            let obs = objetivos;
+            if (m !== "TODAS") obs = objetivos.filter(o => o.materiaId === m);
+            objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + obs.map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('');
+            if(obs.find(o => o.id === valActual)) objSel.value = valActual;
+
             let h = `<table class="w-full border text-xs"><thead><tr class="bg-slate-100"><th class="border p-2">Nombre</th><th class="border p-2">Puntos</th><th class="border p-2">Ventana</th><th class="border p-2">Estado</th><th class="border p-2">Acciones</th></tr></thead><tbody>`;
             objetivos.forEach(o => {
                 h += `<tr><td class="border p-2 font-bold">${o.nombre}</td><td class="border p-2 text-center">${o.ponderacion}</td>
@@ -1348,10 +1364,23 @@
         });
         window.eliminarPregunta = async (pId, oId) => { await deleteDoc(doc(db,"preguntas",pId)); delete clavesDocente[pId]; await setDoc(doc(db,"claves_examen",oId), {respuestas:clavesDocente}, {merge:true}); };
 
-        // TAB 6 ALUMNOS
+        // ==========================================
+        // TAB 6: ALUMNOS (AHORA CON BUSCADOR)
+        // ==========================================
+        document.getElementById("filtro-alumnos-sec").addEventListener("change", renderTablaAlumnos);
+        document.getElementById("filtro-alumnos-txt").addEventListener("input", renderTablaAlumnos);
+        
         function renderTablaAlumnos() {
             const sec = document.getElementById("filtro-alumnos-sec").value;
-            let fs = estudiantes; if(sec !== "TODAS") fs = fs.filter(x=>x.seccionId===sec);
+            const txt = (document.getElementById("filtro-alumnos-txt").value || "").toLowerCase();
+            
+            let fs = estudiantes; 
+            if(sec !== "TODAS") fs = fs.filter(x=>x.seccionId===sec);
+            if(txt) fs = fs.filter(x => x.cedula.toLowerCase().includes(txt) || x.nombre.toLowerCase().includes(txt) || x.apellido.toLowerCase().includes(txt));
+            
+            const cont = document.getElementById("tabla-alumnos-gestion");
+            if(fs.length === 0) return cont.innerHTML = '<p class="text-slate-400 py-3">No hay alumnos que coincidan.</p>';
+            
             let h = `<table class="w-full border text-xs"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Estudiante</th><th class="border p-2">Acciones</th></tr></thead><tbody>`;
             fs.forEach(e => {
                 h += `<tr><td class="border p-2 font-mono">${e.cedula}</td><td class="border p-2">${e.nombre} ${e.apellido} ${e.passkeyId ? '🛡️ (Huella)' : ''}</td>
@@ -1361,9 +1390,9 @@
                 <button onclick="window.eliminarAlumno('${e.id}')" class="bg-red-100 text-red-600 px-2 py-1 rounded border">Borrar</button>
                 </td></tr>`;
             });
-            document.getElementById("tabla-alumnos-gestion").innerHTML = h + `</tbody></table>`;
+            cont.innerHTML = h + `</tbody></table>`;
         }
-        document.getElementById("filtro-alumnos-sec").addEventListener("change", renderTablaAlumnos);
+        
         window.forzarCierreSesionAlumno = async (id) => { await updateDoc(doc(db, "estudiantes", id), {tokenSesionActivo: null, enLinea: false}); alert("Liberada"); };
         window.eliminarAlumno = async (id) => { if(confirm("Borrar alumno?")) await deleteDoc(doc(db, "estudiantes", id)); };
         window.editarDatosAlumnoModal = (id) => {
@@ -1377,16 +1406,64 @@
             document.getElementById("modal-editar-alumno").classList.add("hidden");
         });
 
-        // TAB 7 CALIFICACIONES
+        // ==========================================
+        // TAB 7: CALIFICACIONES (NUEVO MOTOR DE FILTROS EN CASCADA Y TEXTO)
+        // ==========================================
+        document.getElementById("filtro-calif-txt").addEventListener("input", renderTablaCalificaciones);
+        document.getElementById("filtro-calif-obj").addEventListener("change", renderTablaCalificaciones);
+        
+        document.getElementById("filtro-calif-mat").addEventListener("change", (e) => {
+            const matId = e.target.value;
+            const objSel = document.getElementById("filtro-calif-obj");
+            if (matId === "TODAS") {
+                objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + objetivos.map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('');
+            } else {
+                objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + objetivos.filter(o=>o.materiaId===matId).map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('');
+            }
+            renderTablaCalificaciones();
+        });
+
         function renderTablaCalificaciones() {
+            const matFiltro = document.getElementById("filtro-calif-mat")?.value || "TODAS";
+            const objFiltro = document.getElementById("filtro-calif-obj")?.value || "TODOS";
+            const txtFiltro = (document.getElementById("filtro-calif-txt")?.value || "").toLowerCase();
+
+            let filtradas = calificaciones;
+
+            // Filtro por Materia
+            if (matFiltro !== "TODAS") {
+                const objsDeMateria = objetivos.filter(o => o.materiaId === matFiltro).map(o => o.id);
+                filtradas = filtradas.filter(c => objsDeMateria.includes(c.objetivoId));
+            }
+            
+            // Filtro por Objetivo
+            if (objFiltro !== "TODOS") {
+                filtradas = filtradas.filter(c => c.objetivoId === objFiltro);
+            }
+
+            // Filtro por Texto (Nombre o Cédula)
+            if (txtFiltro) {
+                filtradas = filtradas.filter(c => 
+                    c.cedula.toLowerCase().includes(txtFiltro) || 
+                    c.estudiante.toLowerCase().includes(txtFiltro)
+                );
+            }
+
+            const cont = document.getElementById("tabla-calificaciones-final");
+            if (filtradas.length === 0) {
+                cont.innerHTML = '<p class="text-slate-400 py-3">No hay notas que coincidan con los filtros aplicados.</p>';
+                return;
+            }
+
             let h = `<table class="w-full border text-xs"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Alumno</th><th class="border p-2">Materia</th><th class="border p-2">Nota</th><th class="border p-2">Obs</th><th class="border p-2">🗑️</th></tr></thead><tbody>`;
-            calificaciones.forEach(c => {
-                h += `<tr><td class="border p-2">${c.cedula}</td><td class="border p-2">${c.estudiante}</td><td class="border p-2">${c.materiaNombre}</td><td class="border p-2 font-bold text-center">${c.nota}</td><td class="border p-2">${c.motivoSancion}</td>
-                <td class="border p-2 text-center"><button onclick="window.eliminarNotaOficial('${c.id}')" class="text-red-500 font-bold">X</button></td></tr>`;
+            filtradas.forEach(c => {
+                h += `<tr><td class="border p-2 font-mono">${c.cedula}</td><td class="border p-2 font-medium">${c.estudiante}</td><td class="border p-2">${c.materiaNombre}</td><td class="border p-2 font-bold text-center text-blue-700">${c.nota}</td><td class="border p-2 text-[10px] text-slate-500">${c.motivoSancion}</td>
+                <td class="border p-2 text-center"><button onclick="window.eliminarNotaOficial('${c.id}')" class="text-red-500 font-bold bg-red-50 px-2 py-1 border rounded">X</button></td></tr>`;
             });
-            document.getElementById("tabla-calificaciones-final").innerHTML = h + `</tbody></table>`;
+            cont.innerHTML = h + `</tbody></table>`;
         }
-        window.eliminarNotaOficial = async (id) => { if(confirm("Borrar nota?")) await deleteDoc(doc(db,"calificaciones",id)); };
+
+        window.eliminarNotaOficial = async (id) => { if(confirm("Borrar nota oficial?")) await deleteDoc(doc(db,"calificaciones",id)); };
 
         // TAB 8 PERFIL
         document.getElementById("btn-guardar-perfil").addEventListener("click", async () => {
