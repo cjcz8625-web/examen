@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.9 (Dashboard Estudiantil)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.10 (Producción)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -54,7 +54,7 @@
             <form id="form-login-estudiante" class="space-y-4 max-w-md mx-auto">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Cédula de Identidad</label>
-                    <input type="text" id="login-cedula" placeholder="Ej. V-25123456" class="w-full border border-slate-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono" required>
+                    <input type="text" id="login-cedula" placeholder="Ej. 25123456" class="w-full border border-slate-300 rounded p-2 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono" required>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña (Solo si no tienes huella vinculada)</label>
@@ -84,7 +84,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Cédula de Identidad (Única y No Repetible)</label>
-                    <input type="text" id="reg-cedula" placeholder="Ej. V-25123456" class="w-full border border-slate-300 rounded p-2 text-xs outline-none font-mono" required>
+                    <input type="text" id="reg-cedula" placeholder="Ej. 25123456" class="w-full border border-slate-300 rounded p-2 text-xs outline-none font-mono" required>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Sección Académica</label>
@@ -141,7 +141,7 @@
                 <button id="btn-reanudar-examen-guardado" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded text-xs shadow-sm">Reanudar Evaluación</button>
             </div>
 
-            <!-- DASHBOARD DE RENDIMIENTO ESTUDIANTIL (NUEVO) -->
+            <!-- DASHBOARD DE RENDIMIENTO ESTUDIANTIL -->
             <div id="dashboard-estudiante-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3 hidden border-b border-slate-100 pb-5">
                 <!-- Se inyecta por JS -->
             </div>
@@ -422,7 +422,10 @@
             <div id="tc-perfil" class="hidden bg-white p-6 rounded-b-lg border max-w-md space-y-4 text-xs">
                 <div class="border-b pb-3 space-y-2">
                     <h3 class="text-sm font-bold">Perfil del Docente Titular</h3>
-                    <input type="text" id="doc-cedula-input" placeholder="Cédula" class="w-full border p-2 rounded">
+                    <!-- AQUI APARECERÁ TU UID -->
+                    <p class="text-[11px] text-blue-700 font-mono font-bold bg-blue-50 p-2 rounded border border-blue-200" id="doc-uid-display">UID: Cargando...</p>
+                    
+                    <input type="text" id="doc-cedula-input" placeholder="Cédula" class="w-full border p-2 rounded mt-2">
                     <input type="text" id="doc-nombre-input" placeholder="Nombre" class="w-full border p-2 rounded">
                     <input type="text" id="doc-apellido-input" placeholder="Apellido" class="w-full border p-2 rounded">
                     <button id="btn-guardar-perfil" class="bg-blue-700 text-white font-bold px-4 py-2 rounded">Guardar Perfil</button>
@@ -450,9 +453,6 @@
             onSnapshot, query, where, arrayUnion 
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // ==========================================
-        // 0. MOTOR CRIPTOGRÁFICO Y HUELLA BIOMÉTRICA (WEBAUTHN)
-        // ==========================================
         const APP_SALT = "UNEXCA_EVAL_SECURITY_SALT_2026";
 
         async function cifrarClave(cadena) {
@@ -486,9 +486,6 @@
             return buffer;
         }
 
-        // ==========================================
-        // 1. CONFIGURACIÓN FIREBASE
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDOlulLTxj24VoF9WJDvzmcqU8_m7FxnQE",
             authDomain: "sistema-evaluacion-f9c74.firebaseapp.com",
@@ -502,9 +499,16 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Actualizamos el UID apenas Firebase Auth responda
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                const uidDisplay = document.getElementById("doc-uid-display");
+                if (uidDisplay) uidDisplay.innerText = `UID (Para Firestore): ${user.uid}`;
+            }
+        });
+
         signInAnonymously(auth).catch(err => console.warn("Auth Offline:", err.message));
 
-        // 2. ESTADO GLOBAL
         let docentePerfil = { cedula: "", nombre: "", apellido: "", pinHash: "" };
         let materias = []; let secciones = []; let objetivos = []; let preguntas = [];
         let clavesDocente = {}; let estudiantes = []; let calificaciones = []; let sesionesActivas = [];
@@ -514,7 +518,6 @@
         let tiempoRestanteSegundos = 0; let tiempoUltimaIteracion = 0; 
         
         let timerInterval = null; let wakeLockSentinel = null; let unsubVigilanciaSesion = null;
-
         let strikeCount = 0; let ultimoIncidenteTimestamp = 0;
         let anchoInicial = window.innerWidth; let altoInicial = window.innerHeight;
 
@@ -526,9 +529,6 @@
             }
         });
 
-        // ==========================================
-        // 4. SINCRONIZACIÓN Y PERSISTENCIA 
-        // ==========================================
         const docenteRef = doc(db, "configuracion", "docente");
         getDoc(docenteRef).then(async snap => {
             if (!snap.exists()) {
@@ -566,13 +566,10 @@
         });
         onSnapshot(collection(db, "sesiones_examen"), snap => {
             sesionesActivas = []; snap.forEach(d => sesionesActivas.push({ id: d.id, ...d.data() }));
-            renderTablaReanudacionDocente(); verificarSesionPendienteEstudiante(); evaluarSesionesEntregadasEnServidor();
-            if (estudianteSesion && !examenEnCurso) renderTableroEstudiante(); // Refresca en vivo si un intento cambia de estado
+            renderTablaReanudacionDocente(); verificarSesionPendienteEstudiante(); 
+            if (estudianteSesion && !examenEnCurso) renderTableroEstudiante();
         });
 
-        // ==========================================
-        // 8. BÚSQUEDA ROBUSTA (PARCHE DE "V-" Y GUIONES)
-        // ==========================================
         async function buscarEstudianteRobusto(cedulaIngresada) {
             const ced = normalizarCedula(cedulaIngresada);
             let estData = null;
@@ -585,18 +582,12 @@
                 const cedNum = ced.replace(/[^0-9]/g, '');
                 if (cedNum) {
                     const estOld = estudiantes.find(e => e.cedula.replace(/[^0-9]/g, '') === cedNum);
-                    if (estOld) {
-                        estData = estOld;
-                        estDocId = estOld.id; 
-                    }
+                    if (estOld) { estData = estOld; estDocId = estOld.id; }
                 }
             }
             return { estData, estDocId };
         }
 
-        // ==========================================
-        // 8.1 AUTENTICACIÓN BIOMÉTRICA
-        // ==========================================
         document.getElementById("tab-btn-ingreso").addEventListener("click", () => {
             document.getElementById("form-login-estudiante").classList.remove("hidden");
             document.getElementById("form-registro-estudiante").classList.add("hidden");
@@ -620,7 +611,7 @@
             const ced = normalizarCedula(rawCed);
 
             if (!nom || !ape || !ced || !sec || pass.length < 4) {
-                alert("Rellena todos los campos. La contraseña (respaldo) debe tener al menos 4 caracteres.");
+                alert("Rellena todos los campos. La contraseña debe tener al menos 4 caracteres.");
                 return;
             }
 
@@ -630,7 +621,7 @@
             let passkeyId = null;
 
             if (huellaActiva) {
-                if (!window.PublicKeyCredential) return alert("Tu dispositivo o navegador no soporta el escáner de huellas de forma nativa (WebAuthn).");
+                if (!window.PublicKeyCredential) return alert("Tu dispositivo o navegador no soporta el escáner de huellas de forma nativa.");
                 try {
                     const publicKeyCredParams = {
                         challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -643,12 +634,11 @@
                     const credential = await navigator.credentials.create({ publicKey: publicKeyCredParams });
                     passkeyId = bufferToBase64url(credential.rawId);
                 } catch(err) {
-                    return alert("Error al leer la huella dactilar o proceso cancelado. Intenta registrarte solo con contraseña.");
+                    return alert("Error al leer la huella dactilar. Intenta registrarte solo con contraseña.");
                 }
             }
 
             const passHash = await cifrarClave(pass);
-            
             await setDoc(doc(db, "estudiantes", ced), {
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId,
@@ -657,23 +647,17 @@
             });
 
             alert(`Registro completado. ${huellaActiva ? '¡Huella vinculada con éxito!' : 'Usando solo clave.'}`);
-            
             document.getElementById("tab-btn-ingreso").click();
             document.getElementById("login-cedula").value = ced;
             document.getElementById("login-password").value = "";
             
-            const nData = {
-                nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
-                passwordHash: passHash, passkeyId: passkeyId, presenteAula: false
-            };
-            
+            const nData = { nombre: nom, apellido: ape, cedula: ced, seccionId: sec, passwordHash: passHash, passkeyId: passkeyId, presenteAula: false };
             iniciarSesionEstudianteExitoso(ced, nData);
         }
 
         document.getElementById("btn-completar-registro-huella").addEventListener("click", () => procesarRegistroEstudiante(true));
         document.getElementById("form-registro-estudiante").addEventListener("submit", (e) => { e.preventDefault(); procesarRegistroEstudiante(false); });
 
-        // LOGIN CON CONTRASEÑA TRADICIONAL
         document.getElementById("form-login-estudiante").addEventListener("submit", async (e) => {
             e.preventDefault();
             const cedIngresada = document.getElementById("login-cedula").value;
@@ -682,8 +666,7 @@
             if (!cedIngresada || !pass) return alert("Ingresa tu cédula y contraseña.");
 
             const { estData, estDocId } = await buscarEstudianteRobusto(cedIngresada);
-
-            if (!estData) return alert("Cédula no registrada en el sistema. Verifica si la escribiste correctamente.");
+            if (!estData) return alert("Cédula no registrada en el sistema.");
             
             const passHash = await cifrarClave(pass);
             if (estData.passwordHash !== passHash && estData.password !== pass) return alert("Contraseña incorrecta.");
@@ -691,16 +674,13 @@
             iniciarSesionEstudianteExitoso(estDocId, estData);
         });
 
-        // LOGIN ESTRICTO CON HUELLA DACTILAR
         document.getElementById("btn-iniciar-huella").addEventListener("click", async () => {
             const cedIngresada = document.getElementById("login-cedula").value;
             if (!cedIngresada) return alert("Primero escribe tu cédula de identidad para buscar tu huella.");
 
             const { estData, estDocId } = await buscarEstudianteRobusto(cedIngresada);
-
             if (!estData) return alert("Cédula no registrada en el sistema.");
-            
-            if (!estData.passkeyId) return alert("No tienes ninguna huella registrada. Ingresa la contraseña tradicional, y luego podrás vincular tu huella desde el tablero principal.");
+            if (!estData.passkeyId) return alert("No tienes ninguna huella registrada. Ingresa con contraseña.");
 
             try {
                 const publicKeyRequestParams = {
@@ -709,7 +689,6 @@
                     userVerification: "required", timeout: 60000
                 };
                 await navigator.credentials.get({ publicKey: publicKeyRequestParams });
-                
                 document.getElementById("login-password").value = ""; 
                 iniciarSesionEstudianteExitoso(estDocId, estData);
             } catch(err) {
@@ -717,9 +696,8 @@
             }
         });
 
-        // VINCULAR HUELLA DESDE EL TABLERO
         document.getElementById("btn-vincular-huella-dash").addEventListener("click", async () => {
-            if (!window.PublicKeyCredential) return alert("Tu navegador o teléfono no soporta WebAuthn.");
+            if (!window.PublicKeyCredential) return alert("Tu navegador no soporta WebAuthn.");
             try {
                 const publicKeyCredParams = {
                     challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -736,9 +714,9 @@
                 estudianteSesion.passkeyId = nuevoPasskeyId;
                 
                 document.getElementById("box-vincular-huella").classList.add("hidden");
-                alert("¡Huella vinculada exitosamente! Ya podrás usar el botón verde la próxima vez que inicies sesión.");
+                alert("¡Huella vinculada exitosamente!");
             } catch(err) {
-                alert("Proceso cancelado o error al leer huella.");
+                alert("Proceso cancelado.");
             }
         });
 
@@ -751,16 +729,13 @@
             mostrarTableroEstudiante();
         }
 
-        // ==========================================
-        // VIGILANCIA EN TIEMPO REAL: CONEXIÓN SIMULTÁNEA
-        // ==========================================
         function activarVigilanciaConexionUnica(estDocId, tokenLocal) {
             if (unsubVigilanciaSesion) unsubVigilanciaSesion();
             unsubVigilanciaSesion = onSnapshot(doc(db, "estudiantes", estDocId), snap => {
-                if (!snap.exists()) return expulsarPorViolacionSesion("Tu cuenta de estudiante ha sido eliminada por el docente.");
+                if (!snap.exists()) return expulsarPorViolacionSesion("Tu cuenta de estudiante ha sido eliminada.");
                 const data = snap.data();
                 if (data.tokenSesionActivo && data.tokenSesionActivo !== tokenLocal) {
-                    expulsarPorViolacionSesion("Se ha detectado un inicio de sesión en otro dispositivo. Conexiones simultáneas prohibidas.");
+                    expulsarPorViolacionSesion("Conexiones simultáneas prohibidas. Sesión cerrada.");
                 } else if (data.tokenSesionActivo === null && !examenEnCurso) {
                     expulsarPorViolacionSesion("Tu sesión ha sido finalizada remotamente.");
                 }
@@ -788,9 +763,6 @@
             document.getElementById("vista-estudiante-portal").classList.remove("hidden");
         });
 
-        // ==========================================
-        // RENDERIZADO DEL TABLERO Y DASHBOARD ESTUDIANTIL (V4.9)
-        // ==========================================
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
             document.getElementById("vista-estudiante-tablero").classList.remove("hidden");
@@ -805,7 +777,6 @@
                 document.getElementById("box-vincular-huella").classList.add("hidden");
                 document.getElementById("box-vincular-huella").classList.remove("flex");
             }
-
             renderTableroEstudiante();
             verificarSesionPendienteEstudiante();
         }
@@ -814,23 +785,17 @@
             const cont = document.getElementById("contenedor-evaluaciones-alumno");
             const dashCont = document.getElementById("dashboard-estudiante-stats");
             
-            // 1. LÓGICA DEL DASHBOARD DE RENDIMIENTO ESTUDIANTIL
             const misCalificaciones = calificaciones.filter(c => c.cedula === estudianteSesion.cedula);
             let totalPresentadas = misCalificaciones.length;
-            let notaAcumulada = 0;
-            let ponderacionAcumulada = 0;
+            let notaAcumulada = 0; let ponderacionAcumulada = 0;
             
-            misCalificaciones.forEach(c => {
-                notaAcumulada += parseFloat(c.nota) || 0;
-                ponderacionAcumulada += parseFloat(c.ponderacionTotal) || 0;
-            });
+            misCalificaciones.forEach(c => { notaAcumulada += parseFloat(c.nota) || 0; ponderacionAcumulada += parseFloat(c.ponderacionTotal) || 0; });
             
             if (dashCont) {
                 if (totalPresentadas > 0) {
                     dashCont.classList.remove("hidden");
                     let porcentaje = ponderacionAcumulada > 0 ? Math.round((notaAcumulada * 100) / ponderacionAcumulada) : 0;
                     let colorRendimiento = porcentaje >= 50 ? 'text-emerald-700' : 'text-red-600';
-                    
                     dashCont.innerHTML = `
                         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg text-center shadow-sm">
                             <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Evaluaciones</p>
@@ -850,12 +815,10 @@
                         </div>
                     `;
                 } else {
-                    dashCont.classList.add("hidden");
-                    dashCont.innerHTML = "";
+                    dashCont.classList.add("hidden"); dashCont.innerHTML = "";
                 }
             }
 
-            // 2. LÓGICA DE LA LISTA DE EXÁMENES
             const objs = objetivos.filter(o => o.activo && o.seccionesAutorizadas && o.seccionesAutorizadas.includes(estudianteSesion.seccionId));
             if (objs.length === 0) return cont.innerHTML = '<p class="text-xs text-slate-400 py-3">No hay evaluaciones programadas para tu sección.</p>';
 
@@ -865,29 +828,19 @@
                 const mat = materias.find(m => m.id === obj.materiaId);
                 const calif = calificaciones.find(c => c.cedula === estudianteSesion.cedula && c.objetivoId === obj.id);
                 const sesionPrevia = sesionesActivas.find(s => s.cedula === estudianteSesion.cedula && s.objetivoId === obj.id);
-                
                 const presente = estudianteSesion.presenteAula === true;
                 const inicioFormat = obj.horaInicio ? new Date(obj.horaInicio).toLocaleString() : 'N/A';
                 const finFormat = obj.horaFin ? new Date(obj.horaFin).toLocaleString() : 'N/A';
 
-                h += `
-                    <div class="border rounded-lg p-4 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm">
+                h += `<div class="border rounded-lg p-4 bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm">
                         <div class="w-full sm:w-auto">
                             <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded uppercase">${mat ? mat.nombre : 'Cátedra'}</span>
                             <h4 class="font-bold text-sm text-slate-800 mt-1">${obj.nombre}</h4>
-                            <p class="text-[11px] text-slate-500 mt-1 bg-white inline-block p-1.5 border rounded">
-                                <span class="text-emerald-700 font-bold">Inicia:</span> ${inicioFormat} <br>
-                                <span class="text-red-700 font-bold">Cierra:</span> ${finFormat}
-                            </p>
-                        </div>
-                        <div class="w-full sm:w-auto mt-2 sm:mt-0">
-                `;
+                            <p class="text-[11px] text-slate-500 mt-1 bg-white inline-block p-1.5 border rounded"><span class="text-emerald-700 font-bold">Inicia:</span> ${inicioFormat} <br><span class="text-red-700 font-bold">Cierra:</span> ${finFormat}</p>
+                        </div><div class="w-full sm:w-auto mt-2 sm:mt-0">`;
                 
                 if (calif) {
-                    h += `<div class="flex flex-col sm:flex-row items-center gap-2">
-                              <span class="bg-emerald-100 text-emerald-800 font-bold text-xs px-3 py-1.5 rounded text-center border border-emerald-200">✅ Calificado: ${calif.nota} / ${calif.ponderacionTotal} pts</span>
-                              <button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-white hover:bg-slate-50 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded border border-slate-300 shadow-sm transition">Ver Corrección</button>
-                          </div>`;
+                    h += `<div class="flex flex-col sm:flex-row items-center gap-2"><span class="bg-emerald-100 text-emerald-800 font-bold text-xs px-3 py-1.5 rounded text-center border border-emerald-200">✅ Calificado: ${calif.nota} / ${calif.ponderacionTotal} pts</span><button onclick="window.verReporteEstudiante('${estudianteSesion.cedula}_${obj.id}')" class="bg-white hover:bg-slate-50 text-slate-800 font-bold text-[11px] px-3 py-1.5 rounded border border-slate-300 shadow-sm transition">Ver Corrección</button></div>`;
                 } else if (sesionPrevia && sesionPrevia.estado === "entregado") {
                     h += `<span class="text-xs text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2 rounded font-bold text-center block">Evaluación entregada (Pendiente calificación)</span>`;
                 } else if (sesionPrevia && (sesionPrevia.estado === "bloqueado_por_infracciones" || sesionPrevia.estado === "bloqueado_por_fraude")) {
@@ -908,9 +861,6 @@
             cont.innerHTML = h;
         }
 
-        // ==========================================
-        // 9. RECUPERACIÓN ANTE APAGONES
-        // ==========================================
         function verificarSesionPendienteEstudiante() {
             if (!estudianteSesion) return;
             const sesion = sesionesActivas.find(s => s.cedula === estudianteSesion.cedula && (s.estado === "en_curso" || s.estado === "reanudacion_permitida"));
@@ -938,9 +888,6 @@
             ejecutarPantallaExamen(pregs, true);
         }
 
-        // ==========================================
-        // 10. INICIO DE EXAMEN Y TRAMPA 00
-        // ==========================================
         window.iniciarExamenAlumno = async function(objId) {
             const sesionId = `${estudianteSesion.cedula}_${objId}`;
 
@@ -951,7 +898,6 @@
                     alert("Tienes un intento interrumpido. Utiliza el botón amarillo de 'Reanudar Evaluación'.");
                     verificarSesionPendienteEstudiante(); renderTableroEstudiante(); return;
                 }
-
                 objetivoActivo = objetivos.find(o => o.id === objId);
                 const matObj = materias.find(m => m.id === objetivoActivo?.materiaId);
                 
@@ -959,7 +905,6 @@
                 const qC = query(collection(db, "calificaciones"), where("cedula", "==", estudianteSesion.cedula), where("objetivoId", "==", objId));
                 const snapC = await getDocs(qC);
                 snapC.forEach(async (d) => await deleteDoc(d.ref));
-
                 await addDoc(collection(db, "calificaciones"), {
                     fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula,
                     estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`,
@@ -1038,9 +983,7 @@
             activarListenersSupervision();
         }
 
-        async function solicitarWakeLock() {
-            try { if ('wakeLock' in navigator) { wakeLockSentinel = await navigator.wakeLock.request('screen'); document.getElementById("badge-wakelock").classList.remove("hidden"); } } catch (e) {}
-        }
+        async function solicitarWakeLock() { try { if ('wakeLock' in navigator) { wakeLockSentinel = await navigator.wakeLock.request('screen'); document.getElementById("badge-wakelock").classList.remove("hidden"); } } catch (e) {} }
         function liberarWakeLock() { if (wakeLockSentinel) { wakeLockSentinel.release(); wakeLockSentinel = null; document.getElementById("badge-wakelock").classList.add("hidden"); } }
         function solicitarPantallaCompleta() { const el = document.documentElement; if (el.requestFullscreen) el.requestFullscreen().catch(()=>{}); anchoInicial = window.innerWidth; altoInicial = window.innerHeight; }
 
@@ -1059,9 +1002,6 @@
             await updateDoc(doc(db, "sesiones_examen", sesionId), { respuestas: respuestasEstudiante, ultimaPreguntaId: pregId }).catch(()=>{});
         };
 
-        // ==========================================
-        // 12. SISTEMA DE 1 ADVERTENCIA Y SANCIONES
-        // ==========================================
         function activarListenersSupervision() {
             document.addEventListener("visibilitychange", onCambioPestana);
             window.addEventListener("blur", onPerdidaFoco);
@@ -1112,7 +1052,7 @@
         }
 
         // ==========================================
-        // 13. ENTREGA CIEGA
+        // 13. ENTREGA Y CALIFICACIÓN AUTOMÁTICA CLIENTE (V4.10)
         // ==========================================
         document.getElementById("btn-entregar-examen-final").addEventListener("click", () => procesarEntregaFinalCiega(false));
         function autoEntregarPorTiempoAgotado() { procesarEntregaFinalCiega(true); }
@@ -1120,57 +1060,71 @@
         async function procesarEntregaFinalCiega(esPorTiempo) {
             examenEnCurso = false; clearInterval(timerInterval); desactivarListenersSupervision(); liberarWakeLock();
             if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-            const sId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
-            await updateDoc(doc(db, "sesiones_examen", sId), { estado: "entregado", entregaAutomatica: esPorTiempo, fechaEntrega: new Date().toISOString() }).catch(()=>{});
-            document.getElementById("vista-examen-activo").classList.add("hidden"); document.getElementById("vista-resultados-fin").classList.remove("hidden");
+
+            const sesionId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
+            const matObj = materias.find(m => m.id === objetivoActivo.materiaId);
+            
+            document.getElementById("vista-examen-activo").classList.add("hidden"); 
+            document.getElementById("vista-resultados-fin").classList.remove("hidden");
             document.getElementById("res-estudiante-linea").innerText = `${estudianteSesion.nombre} ${estudianteSesion.apellido} (C.I: ${estudianteSesion.cedula})`;
-            const unsubCalif = onSnapshot(doc(db, "sesiones_examen", sId), snap => {
-                if(snap.exists() && snap.data().calificado) {
-                    document.getElementById("res-nota-valor").innerText = snap.data().notaFinal;
-                    document.getElementById("btn-ver-reporte-final-container").classList.remove("hidden");
-                    window.reporteHtmlActual = snap.data().reporteHtml;
-                    unsubCalif();
-                }
-            });
+            document.getElementById("res-nota-valor").innerHTML = `<span class="animate-pulse text-2xl text-blue-600">Evaluando...</span>`;
+            document.getElementById("res-escala-valor").innerText = "Procesando calificación automática...";
+            
+            try {
+                const snapClave = await getDoc(doc(db, "claves_examen", objetivoActivo.id));
+                const claves = snapClave.exists() ? (snapClave.data().respuestas || {}) : {};
+                const qP = query(collection(db, "preguntas"), where("objetivoId", "==", objetivoActivo.id));
+                const snapshotPregs = await getDocs(qP);
+                
+                let totalNota = 0; let aprobadas = []; let reprobadas = [];
+
+                snapshotPregs.forEach(docP => {
+                    const pData = docP.data();
+                    const seleccion = respuestasEstudiante[docP.id];
+                    const correcta = claves[docP.id];
+                    
+                    if (seleccion !== undefined && parseInt(seleccion) === parseInt(correcta)) {
+                        totalNota += parseFloat(pData.valor || 0);
+                        aprobadas.push(`<li class="text-sm">✅ ${pData.enunciado} <span class="font-bold text-emerald-600">(+${pData.valor} pts)</span></li>`);
+                    } else {
+                        reprobadas.push(`<li class="text-sm">❌ ${pData.enunciado} <span class="font-bold text-red-500">(${seleccion===undefined?'Vacía':'Mala'})</span></li>`);
+                    }
+                });
+
+                let htmlReporte = `<div class="bg-white border p-4 rounded text-left">`;
+                if (aprobadas.length > 0) htmlReporte += `<h4 class="font-bold text-emerald-700">Acertadas:</h4><ul class="mb-4">${aprobadas.join('')}</ul>`;
+                if (reprobadas.length > 0) htmlReporte += `<h4 class="font-bold text-red-700">Erradas/Vacías:</h4><ul>${reprobadas.join('')}</ul>`;
+                htmlReporte += `</div>`;
+                const notaFinal = totalNota.toFixed(2);
+
+                await addDoc(collection(db, "calificaciones"), { 
+                    fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula, estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`, 
+                    materiaNombre: matObj ? matObj.nombre : 'Cátedra', objetivoId: objetivoActivo.id, objetivoNombre: objetivoActivo.nombre, 
+                    nota: parseFloat(notaFinal), ponderacionTotal: objetivoActivo.ponderacion, sancionado: false, motivoSancion: esPorTiempo ? "Tiempo agotado" : "Entrega manual" 
+                });
+                
+                await updateDoc(doc(db, "sesiones_examen", sesionId), { 
+                    estado: "entregado", entregaAutomatica: esPorTiempo, fechaEntrega: new Date().toISOString(),
+                    calificado: true, notaFinal: parseFloat(notaFinal), reporteHtml: htmlReporte 
+                });
+
+                document.getElementById("res-nota-valor").innerText = notaFinal;
+                document.getElementById("res-escala-valor").innerText = `Calificación generada automáticamente`;
+                document.getElementById("btn-ver-reporte-final-container").classList.remove("hidden");
+                window.reporteHtmlActual = htmlReporte;
+
+            } catch (error) {
+                document.getElementById("res-nota-valor").innerText = "Error";
+                document.getElementById("res-escala-valor").innerText = "Fallo al calificar. El docente revisará tu intento.";
+                await updateDoc(doc(db, "sesiones_examen", sesionId), { estado: "entregado", entregaAutomatica: esPorTiempo, fechaEntrega: new Date().toISOString() }).catch(()=>{});
+            }
         }
 
         // ==========================================
         // FUNCIONALIDADES DEL DOCENTE Y REPORTES
         // ==========================================
-        async function evaluarSesionesEntregadasEnServidor() {
-            const pendientes = sesionesActivas.filter(s => s.estado === "entregado" && !s.calificado);
-            for (let sesion of pendientes) {
-                try {
-                    const snapClave = await getDoc(doc(db, "claves_examen", sesion.objetivoId));
-                    if (!snapClave.exists()) continue;
-                    const claves = snapClave.data().respuestas || {};
-                    const snapPregs = await getDoc(doc(db, "objetivos", sesion.objetivoId));
-                    const objData = snapPregs.exists() ? snapPregs.data() : null;
-                    if (!objData) continue;
-                    const qP = query(collection(db, "preguntas"), where("objetivoId", "==", sesion.objetivoId));
-                    const snapshot = await getDocs(qP);
-                    let totalNota = 0; let aprobadas = []; let reprobadas = [];
-                    snapshot.forEach(docP => {
-                        const pData = docP.data();
-                        const seleccion = sesion.respuestas ? sesion.respuestas[docP.id] : undefined;
-                        const correcta = claves[docP.id];
-                        if (seleccion !== undefined && parseInt(seleccion) === parseInt(correcta)) {
-                            totalNota += parseFloat(pData.valor || 0);
-                            aprobadas.push(`<li class="text-sm">✅ ${pData.enunciado} <span class="font-bold text-emerald-600">(+${pData.valor} pts)</span></li>`);
-                        } else {
-                            reprobadas.push(`<li class="text-sm">❌ ${pData.enunciado} <span class="font-bold text-red-500">(${seleccion===undefined?'Vacía':'Mala'})</span></li>`);
-                        }
-                    });
-                    let htmlReporte = `<div class="bg-white border p-4 rounded text-left">`;
-                    if (aprobadas.length > 0) htmlReporte += `<h4 class="font-bold text-emerald-700">Acertadas:</h4><ul class="mb-4">${aprobadas.join('')}</ul>`;
-                    if (reprobadas.length > 0) htmlReporte += `<h4 class="font-bold text-red-700">Erradas/Vacías:</h4><ul>${reprobadas.join('')}</ul>`;
-                    htmlReporte += `</div>`;
-                    const notaFinal = totalNota.toFixed(2);
-                    await addDoc(collection(db, "calificaciones"), { fecha: new Date().toLocaleString(), cedula: sesion.cedula, estudiante: sesion.estudianteNombre, materiaNombre: objData.materiaNombre || 'Cátedra', objetivoId: sesion.objetivoId, objetivoNombre: sesion.objetivoNombre, nota: parseFloat(notaFinal), ponderacionTotal: objData.ponderacion, sancionado: false, motivoSancion: sesion.entregaAutomatica ? "Cierre automático" : "Evaluado a ciegas" });
-                    await updateDoc(doc(db, "sesiones_examen", sesion.id), { calificado: true, notaFinal: parseFloat(notaFinal), reporteHtml: htmlReporte });
-                } catch (e) {}
-            }
-        }
+        async function evaluarSesionesEntregadasEnServidor() { return; } // Vaciada en V4.10 porque se califica en cliente
+        
         window.verReporteEstudianteActual = function() {
             if (window.reporteHtmlActual) { document.getElementById("contenido-reporte-modal").innerHTML = window.reporteHtmlActual; document.getElementById("modal-ver-reporte").classList.remove("hidden"); }
         };
@@ -1196,13 +1150,18 @@
             localStorage.removeItem("docenteSesionLocal"); document.getElementById("vista-docente-panel").classList.add("hidden"); document.getElementById("vista-estudiante-portal").classList.remove("hidden");
         });
 
-        // ==========================================
-        // UI DOCENTE GENERAL
-        // ==========================================
         function actualizarInterfazDocente() {
             const nom = docentePerfil.nombre ? `Prof. ${docentePerfil.nombre} ${docentePerfil.apellido}` : "Sin configurar";
             document.getElementById("header-docente-info").innerText = `Docente: ${nom}`;
             document.getElementById("doc-panel-nombre").innerText = `Docente Titular: ${nom}`;
+            
+            // Actualizamos visualmente el UID al cargar si ya está disponible
+            const user = auth.currentUser;
+            if (user) {
+                const uidDisplay = document.getElementById("doc-uid-display");
+                if (uidDisplay) uidDisplay.innerText = `UID (Para Firestore): ${user.uid}`;
+            }
+
             if (!document.getElementById("doc-cedula-input").value && docentePerfil.cedula) { document.getElementById("doc-cedula-input").value = docentePerfil.cedula; document.getElementById("doc-nombre-input").value = docentePerfil.nombre; document.getElementById("doc-apellido-input").value = docentePerfil.apellido; }
         }
         const tabsDoc = ["asistencia", "reanudacion", "materias", "evaluaciones", "preguntas", "alumnos", "calificaciones", "perfil"];
@@ -1477,18 +1436,13 @@
 
             let filtradas = calificaciones;
 
-            // Filtro por Materia
             if (matFiltro !== "TODAS") {
                 const objsDeMateria = objetivos.filter(o => o.materiaId === matFiltro).map(o => o.id);
                 filtradas = filtradas.filter(c => objsDeMateria.includes(c.objetivoId));
             }
-            
-            // Filtro por Objetivo
             if (objFiltro !== "TODOS") {
                 filtradas = filtradas.filter(c => c.objetivoId === objFiltro);
             }
-
-            // Filtro por Texto (Nombre o Cédula)
             if (txtFiltro) {
                 filtradas = filtradas.filter(c => 
                     c.cedula.toLowerCase().includes(txtFiltro) || 
