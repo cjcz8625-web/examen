@@ -293,6 +293,22 @@
         <!-- ========================================== -->
         <!-- MODALES DOCENTE -->
         <!-- ========================================== -->
+        
+        <!-- MODAL LOGIN DOCENTE (Reemplaza al prompt) -->
+        <div id="modal-login-docente" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 space-y-4 border-t-4 border-blue-800">
+                <h3 class="text-lg font-bold text-slate-900 border-b pb-2">Acceso Docente</h3>
+                <div class="relative">
+                    <input type="password" id="login-docente-pin" placeholder="Contraseña de acceso" class="w-full border border-slate-300 p-2.5 rounded text-sm pr-10 outline-none focus:border-blue-500">
+                    <button type="button" class="toggle-password absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-lg" data-target="login-docente-pin">👁️</button>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button id="btn-confirmar-login-docente" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 rounded text-xs transition">Ingresar</button>
+                    <button onclick="document.getElementById('modal-login-docente').classList.add('hidden')" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded text-xs transition">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
         <div id="modal-editar-alumno" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
                 <h3 class="text-lg font-bold text-slate-900 border-b pb-2">Modificar Estudiante</h3>
@@ -466,12 +482,24 @@
                     <input type="text" id="doc-apellido-input" placeholder="Apellido" class="w-full border p-2 rounded">
                     <button id="btn-guardar-perfil" class="bg-blue-700 text-white font-bold px-4 py-2 rounded">Guardar Perfil</button>
                 </div>
-                <div class="space-y-2">
-                    <h3 class="text-sm font-bold">Cambiar PIN</h3>
-                    <input type="password" id="pin-viejo" placeholder="PIN Actual" class="w-full border p-2 rounded">
-                    <input type="password" id="pin-nuevo" placeholder="Nuevo PIN" class="w-full border p-2 rounded">
-                    <input type="password" id="pin-confirma" placeholder="Confirmar PIN" class="w-full border p-2 rounded">
-                    <button id="btn-actualizar-pin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded">Actualizar PIN</button>
+                <div class="space-y-3 pt-2">
+                    <h3 class="text-sm font-bold border-b pb-1">Cambiar Contraseña</h3>
+                    <p class="text-[10px] text-slate-500">Mínimo 6 caracteres. Debe incluir: Mayúscula, minúscula, número y un carácter especial.</p>
+                    
+                    <div class="relative">
+                        <input type="password" id="pin-viejo" placeholder="Contraseña Actual" class="w-full border p-2 rounded pr-10 outline-none focus:border-blue-500">
+                        <button type="button" class="toggle-password absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 text-base" data-target="pin-viejo">👁️</button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="pin-nuevo" placeholder="Nueva Contraseña" class="w-full border p-2 rounded pr-10 outline-none focus:border-blue-500">
+                        <button type="button" class="toggle-password absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 text-base" data-target="pin-nuevo">👁️</button>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="pin-confirma" placeholder="Confirmar Nueva Contraseña" class="w-full border p-2 rounded pr-10 outline-none focus:border-blue-500">
+                        <button type="button" class="toggle-password absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 text-base" data-target="pin-confirma">👁️</button>
+                    </div>
+                    
+                    <button id="btn-actualizar-pin" class="bg-slate-800 text-white font-bold px-4 py-2 rounded w-full">Actualizar Contraseña</button>
                 </div>
             </div>
         </section>
@@ -1132,14 +1160,50 @@
             if (sSnap.exists() && sSnap.data().reporteHtml) { document.getElementById("contenido-reporte-modal").innerHTML = sSnap.data().reporteHtml; document.getElementById("modal-ver-reporte").classList.remove("hidden"); }
         };
 
-        // LOGIN DOCENTE
-        document.getElementById("btn-login-docente").addEventListener("click", async () => {
-            const p = prompt("PIN Docente:"); if (!p) return;
+        // ==========================================
+        // LOGIN DOCENTE Y GESTIÓN DE CONTRASEÑA
+        // ==========================================
+        
+        // 1. Mostrar/Ocultar Contraseñas (Botón Ojito)
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.innerText = '🙈';
+                } else {
+                    input.type = 'password';
+                    this.innerText = '👁️';
+                }
+            });
+        });
+
+        // 2. Abrir Modal de Login (Reemplaza al prompt)
+        document.getElementById("btn-login-docente").addEventListener("click", () => {
+            document.getElementById("login-docente-pin").value = "";
+            document.getElementById("login-docente-pin").type = "password"; // Resetea el input
+            document.querySelector('[data-target="login-docente-pin"]').innerText = "👁️";
+            document.getElementById("modal-login-docente").classList.remove("hidden");
+            document.getElementById("login-docente-pin").focus();
+        });
+
+        // 3. Procesar el Login desde el Modal
+        document.getElementById("btn-confirmar-login-docente").addEventListener("click", async () => {
+            const p = document.getElementById("login-docente-pin").value; 
+            if (!p) return;
+            
             if (await cifrarClave(p) === docentePerfil.pinHash) {
                 localStorage.setItem("docenteSesionLocal", "true");
-                document.getElementById("vista-estudiante-portal").classList.add("hidden"); document.getElementById("vista-estudiante-tablero").classList.add("hidden"); document.getElementById("vista-docente-panel").classList.remove("hidden");
-            } else alert("PIN incorrecto.");
+                document.getElementById("modal-login-docente").classList.add("hidden");
+                document.getElementById("vista-estudiante-portal").classList.add("hidden"); 
+                document.getElementById("vista-estudiante-tablero").classList.add("hidden"); 
+                document.getElementById("vista-docente-panel").classList.remove("hidden");
+            } else {
+                alert("Contraseña incorrecta.");
+            }
         });
+
         document.getElementById("btn-volver-estudiante-desde-docente").addEventListener("click", () => {
             document.getElementById("vista-docente-panel").classList.add("hidden");
             if (estudianteSesion) document.getElementById("vista-estudiante-tablero").classList.remove("hidden");
@@ -1450,12 +1514,34 @@
             await updateDoc(doc(db, "configuracion", "docente"), { cedula: document.getElementById("doc-cedula-input").value, nombre: document.getElementById("doc-nombre-input").value, apellido: document.getElementById("doc-apellido-input").value });
             alert("Guardado");
         });
+        
+        // 4. Lógica de Cambio de Contraseña Fuerte en Pestaña Perfil
         document.getElementById("btn-actualizar-pin").addEventListener("click", async () => {
-            const v = document.getElementById("pin-viejo").value; const n = document.getElementById("pin-nuevo").value; const c = document.getElementById("pin-confirma").value;
-            if(await cifrarClave(v) !== docentePerfil.pinHash) return alert("PIN actual incorrecto.");
-            if(n!==c || n.length<4) return alert("Mínimo 4 dígitos y coincidir.");
+            const v = document.getElementById("pin-viejo").value; 
+            const n = document.getElementById("pin-nuevo").value; 
+            const c = document.getElementById("pin-confirma").value;
+            
+            if(await cifrarClave(v) !== docentePerfil.pinHash) return alert("Contraseña actual incorrecta.");
+            if(n !== c) return alert("Las contraseñas nuevas no coinciden.");
+            
+            // Expresión Regular para: Al menos 6 chars, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial
+            const regexComplejidad = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+            
+            if(!regexComplejidad.test(n)) {
+                return alert("⚠️ La contraseña no cumple con los requisitos de seguridad.\nDebe incluir mayúscula, minúscula, número y un carácter especial (ej. @, #, $, -, _).");
+            }
+
             await updateDoc(doc(db, "configuracion", "docente"), { pinHash: await cifrarClave(n), pin: null });
-            alert("PIN actualizado"); document.getElementById("pin-viejo").value=""; document.getElementById("pin-nuevo").value=""; document.getElementById("pin-confirma").value="";
+            alert("Contraseña actualizada con nivel de seguridad Alto."); 
+            
+            // Limpiar inputs y resetear los ojitos
+            document.getElementById("pin-viejo").value = ""; 
+            document.getElementById("pin-nuevo").value = ""; 
+            document.getElementById("pin-confirma").value = "";
+            document.querySelectorAll('.toggle-password').forEach(b => {
+                b.innerText = '👁️';
+                document.getElementById(b.getAttribute('data-target')).type = 'password';
+            });
         });
     </script>
 </body>
