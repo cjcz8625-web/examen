@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.10 (Producción)</title>
+    <title>Plataforma Universitaria de Evaluaciones Supervisadas - V4.11 (Producción Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .no-select { user-select: none; -webkit-user-select: none; }
@@ -96,6 +96,18 @@
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña de Respaldo</label>
                     <input type="password" id="reg-password" placeholder="Mínimo 4 caracteres" class="w-full border border-slate-300 rounded p-2 text-xs outline-none" required>
                 </div>
+
+                <!-- CHECKBOX DE TERMINOS Y DESCARGA -->
+                <div class="mt-4 bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                    <label class="flex items-start space-x-2 cursor-pointer">
+                        <input type="checkbox" id="reg-terminos" class="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" required>
+                        <span class="text-[10px] text-slate-600 leading-tight">
+                            He leído y acepto los <a href="#" onclick="alert('1. Tu huella no sale del teléfono.\n2. La plataforma NO realiza capturas de pantalla ni instala software malicioso.\n3. Eres responsable de tu batería e internet.\n4. Salir de la pantalla anula el examen (01).\n5. Borrar la caché o intentar hackear el sistema genera un 00 irreversible.\n6. El docente no se responsabiliza por fallas en tu equipo.')" class="text-blue-700 font-bold underline">Términos de Uso, el Sistema Anti-Fraude y Descargo</a>.
+                            <br><a href="terminos_condiciones.pdf" target="_blank" class="text-blue-700 font-bold inline-flex items-center mt-1"><span class="text-sm mr-1">📥</span> Descargar PDF Oficial</a>
+                        </span>
+                    </label>
+                </div>
+
                 <div class="space-y-2 pt-2">
                     <button type="button" id="btn-completar-registro-huella" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded text-xs transition shadow-sm flex items-center justify-center gap-2">
                         <span class="text-lg">👆</span> Crear Cuenta y Vincular Huella
@@ -190,7 +202,7 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- MODAL DE ADVERTENCIA -->
+        <!-- MODAL DE ADVERTENCIA Y TÉRMINOS OBLIGATORIOS -->
         <!-- ========================================== -->
         <div id="modal-advertencia" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center space-y-4 border-2 border-amber-500">
@@ -208,6 +220,32 @@
                 <button id="btn-reanudar-tras-advertencia" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded text-xs transition">
                     Entendido, Reanudar en Pantalla Completa
                 </button>
+            </div>
+        </div>
+
+        <!-- MODAL DE TÉRMINOS (PARA ALUMNOS ANTIGUOS) -->
+        <div id="modal-aceptar-terminos" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto border-t-4 border-blue-800">
+                <h3 class="text-xl font-black text-blue-900 border-b pb-2">Actualización de Normativas</h3>
+                <p class="text-sm text-slate-700">Para continuar usando la plataforma, debes aceptar los nuevos términos de evaluación:</p>
+                
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded text-xs text-slate-700 space-y-2 h-48 overflow-y-auto shadow-inner">
+                    <p><strong>1. Privacidad y Cero Invasión:</strong> Tu huella dactilar se procesa en el chip de tu teléfono; no se almacena ni se transmite. Además, el sistema garantiza que <strong>NO realiza capturas de pantalla, NO espía tu cámara/micrófono, ni instala ningún tipo de software malicioso.</strong></p>
+                    <p><strong>2. Responsabilidad Técnica:</strong> Eres responsable de contar con batería e internet durante la prueba. El docente no asume responsabilidad por fallas en tu equipo.</p>
+                    <p><strong>3. Anti-Fraude (01):</strong> Cambiar de ventana, minimizar el navegador o dividir la pantalla generará advertencias y posterior anulación del examen con nota de 01.</p>
+                    <p class="text-red-700 font-bold">4. Tolerancia Cero al Fraude (00): Cualquier intento de evadir la seguridad, borrar la caché del navegador para reiniciar el examen o manipular el código, será castigado con un 00 definitivo e irreversible, sin derecho a apelación.</p>
+                    <p><strong>5. Descargo:</strong> El docente provee esta herramienta "tal cual" y no se hace responsable civil o académicamente por daños a dispositivos o pérdida de datos.</p>
+                </div>
+
+                <div class="pt-2 space-y-2">
+                    <button id="btn-aceptar-terminos-viejos" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded text-sm transition shadow-md flex justify-center items-center gap-2">
+                        <span>☑️</span> Comprendo y acepto todas las condiciones
+                    </button>
+                    <a href="terminos_condiciones.pdf" target="_blank" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold py-2 rounded text-xs transition shadow-sm flex justify-center items-center gap-2">
+                        <span>📥</span> Descargar Documento Oficial (PDF)
+                    </a>
+                    <p class="text-[10px] text-center text-slate-400 mt-2">Este paso es obligatorio y quedará registrado en tu expediente digital.</p>
+                </div>
             </div>
         </div>
 
@@ -319,7 +357,6 @@
                 <button id="tab-btn-perfil" class="py-2 border-b-2 border-transparent text-slate-500 px-3">8. Perfil</button>
             </div>
 
-            <!-- TABS CONTENIDO RESUMIDO -->
             <div id="tc-asistencia" class="bg-white p-6 rounded-b-lg border space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between border-b pb-4 gap-2">
                     <h3 class="text-sm font-bold">Control Presencial en Aula</h3>
@@ -422,7 +459,6 @@
             <div id="tc-perfil" class="hidden bg-white p-6 rounded-b-lg border max-w-md space-y-4 text-xs">
                 <div class="border-b pb-3 space-y-2">
                     <h3 class="text-sm font-bold">Perfil del Docente Titular</h3>
-                    <!-- AQUI APARECERÁ TU UID -->
                     <p class="text-[11px] text-blue-700 font-mono font-bold bg-blue-50 p-2 rounded border border-blue-200" id="doc-uid-display">UID: Cargando...</p>
                     
                     <input type="text" id="doc-cedula-input" placeholder="Cédula" class="w-full border p-2 rounded mt-2">
@@ -499,7 +535,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Actualizamos el UID apenas Firebase Auth responda
         auth.onAuthStateChanged(user => {
             if (user) {
                 const uidDisplay = document.getElementById("doc-uid-display");
@@ -572,13 +607,11 @@
 
         async function buscarEstudianteRobusto(cedulaIngresada) {
             const ced = normalizarCedula(cedulaIngresada);
-            let estData = null;
-            let estDocId = ced;
+            let estData = null; let estDocId = ced;
 
             const snapEst = await getDoc(doc(db, "estudiantes", ced));
-            if (snapEst.exists()) {
-                estData = snapEst.data();
-            } else {
+            if (snapEst.exists()) { estData = snapEst.data(); } 
+            else {
                 const cedNum = ced.replace(/[^0-9]/g, '');
                 if (cedNum) {
                     const estOld = estudiantes.find(e => e.cedula.replace(/[^0-9]/g, '') === cedNum);
@@ -610,18 +643,15 @@
             const pass = document.getElementById("reg-password").value.trim();
             const ced = normalizarCedula(rawCed);
 
-            if (!nom || !ape || !ced || !sec || pass.length < 4) {
-                alert("Rellena todos los campos. La contraseña debe tener al menos 4 caracteres.");
-                return;
-            }
+            if (!nom || !ape || !ced || !sec || pass.length < 4) { return alert("Rellena todos los campos. La contraseña debe tener al menos 4 caracteres."); }
+            if (!document.getElementById("reg-terminos").checked) { return alert("Debes aceptar los términos y condiciones."); }
 
             const { estData } = await buscarEstudianteRobusto(ced);
             if (estData) return alert(`Error: La cédula ${ced} ya existe en el sistema.`);
 
             let passkeyId = null;
-
             if (huellaActiva) {
-                if (!window.PublicKeyCredential) return alert("Tu dispositivo o navegador no soporta el escáner de huellas de forma nativa.");
+                if (!window.PublicKeyCredential) return alert("Tu navegador no soporta el escáner de huellas de forma nativa.");
                 try {
                     const publicKeyCredParams = {
                         challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -633,9 +663,7 @@
                     };
                     const credential = await navigator.credentials.create({ publicKey: publicKeyCredParams });
                     passkeyId = bufferToBase64url(credential.rawId);
-                } catch(err) {
-                    return alert("Error al leer la huella dactilar. Intenta registrarte solo con contraseña.");
-                }
+                } catch(err) { return alert("Error al leer la huella dactilar. Intenta registrarte solo con contraseña."); }
             }
 
             const passHash = await cifrarClave(pass);
@@ -643,6 +671,7 @@
                 nombre: nom, apellido: ape, cedula: ced, seccionId: sec,
                 passwordHash: passHash, passkeyId: passkeyId,
                 presenteAula: false, tokenSesionActivo: null, enLinea: false,
+                terminosAceptados: true,
                 fechaRegistro: new Date().toLocaleString()
             });
 
@@ -651,7 +680,7 @@
             document.getElementById("login-cedula").value = ced;
             document.getElementById("login-password").value = "";
             
-            const nData = { nombre: nom, apellido: ape, cedula: ced, seccionId: sec, passwordHash: passHash, passkeyId: passkeyId, presenteAula: false };
+            const nData = { nombre: nom, apellido: ape, cedula: ced, seccionId: sec, passwordHash: passHash, passkeyId: passkeyId, presenteAula: false, terminosAceptados: true };
             iniciarSesionEstudianteExitoso(ced, nData);
         }
 
@@ -662,22 +691,17 @@
             e.preventDefault();
             const cedIngresada = document.getElementById("login-cedula").value;
             const pass = document.getElementById("login-password").value.trim();
-            
             if (!cedIngresada || !pass) return alert("Ingresa tu cédula y contraseña.");
-
             const { estData, estDocId } = await buscarEstudianteRobusto(cedIngresada);
             if (!estData) return alert("Cédula no registrada en el sistema.");
-            
             const passHash = await cifrarClave(pass);
             if (estData.passwordHash !== passHash && estData.password !== pass) return alert("Contraseña incorrecta.");
-            
             iniciarSesionEstudianteExitoso(estDocId, estData);
         });
 
         document.getElementById("btn-iniciar-huella").addEventListener("click", async () => {
             const cedIngresada = document.getElementById("login-cedula").value;
             if (!cedIngresada) return alert("Primero escribe tu cédula de identidad para buscar tu huella.");
-
             const { estData, estDocId } = await buscarEstudianteRobusto(cedIngresada);
             if (!estData) return alert("Cédula no registrada en el sistema.");
             if (!estData.passkeyId) return alert("No tienes ninguna huella registrada. Ingresa con contraseña.");
@@ -691,9 +715,7 @@
                 await navigator.credentials.get({ publicKey: publicKeyRequestParams });
                 document.getElementById("login-password").value = ""; 
                 iniciarSesionEstudianteExitoso(estDocId, estData);
-            } catch(err) {
-                alert("Huella no reconocida o escáner cancelado.");
-            }
+            } catch(err) { alert("Huella no reconocida o escáner cancelado."); }
         });
 
         document.getElementById("btn-vincular-huella-dash").addEventListener("click", async () => {
@@ -709,15 +731,11 @@
                 };
                 const credential = await navigator.credentials.create({ publicKey: publicKeyCredParams });
                 const nuevoPasskeyId = bufferToBase64url(credential.rawId);
-
                 await updateDoc(doc(db, "estudiantes", estudianteSesion.id), { passkeyId: nuevoPasskeyId });
                 estudianteSesion.passkeyId = nuevoPasskeyId;
-                
                 document.getElementById("box-vincular-huella").classList.add("hidden");
                 alert("¡Huella vinculada exitosamente!");
-            } catch(err) {
-                alert("Proceso cancelado.");
-            }
+            } catch(err) { alert("Proceso cancelado."); }
         });
 
         async function iniciarSesionEstudianteExitoso(cedID, estData) {
@@ -763,6 +781,7 @@
             document.getElementById("vista-estudiante-portal").classList.remove("hidden");
         });
 
+        // 🔴 CONTROL DE MURO DE TÉRMINOS
         function mostrarTableroEstudiante() {
             document.getElementById("vista-estudiante-portal").classList.add("hidden");
             document.getElementById("vista-estudiante-tablero").classList.remove("hidden");
@@ -770,6 +789,10 @@
             document.getElementById("perfil-estudiante-bienvenida").innerText = `Hola, ${estudianteSesion.nombre} ${estudianteSesion.apellido}`;
             document.getElementById("perfil-estudiante-seccion").innerText = `C.I: ${estudianteSesion.cedula} • Sección: ${sec ? sec.nombre : 'No asignada'}`;
             
+            if (!estudianteSesion.terminosAceptados) {
+                document.getElementById("modal-aceptar-terminos").classList.remove("hidden");
+            }
+
             if (!estudianteSesion.passkeyId && window.PublicKeyCredential) {
                 document.getElementById("box-vincular-huella").classList.remove("hidden");
                 document.getElementById("box-vincular-huella").classList.add("flex");
@@ -780,6 +803,13 @@
             renderTableroEstudiante();
             verificarSesionPendienteEstudiante();
         }
+
+        // Aceptar términos viejos
+        document.getElementById("btn-aceptar-terminos-viejos").addEventListener("click", async () => {
+            await updateDoc(doc(db, "estudiantes", estudianteSesion.id), { terminosAceptados: true });
+            estudianteSesion.terminosAceptados = true; 
+            document.getElementById("modal-aceptar-terminos").classList.add("hidden");
+        });
 
         function renderTableroEstudiante() {
             const cont = document.getElementById("contenedor-evaluaciones-alumno");
@@ -822,8 +852,7 @@
             const objs = objetivos.filter(o => o.activo && o.seccionesAutorizadas && o.seccionesAutorizadas.includes(estudianteSesion.seccionId));
             if (objs.length === 0) return cont.innerHTML = '<p class="text-xs text-slate-400 py-3">No hay evaluaciones programadas para tu sección.</p>';
 
-            let h = '';
-            const ahora = Date.now();
+            let h = ''; const ahora = Date.now();
             objs.forEach(obj => {
                 const mat = materias.find(m => m.id === obj.materiaId);
                 const calif = calificaciones.find(c => c.cedula === estudianteSesion.cedula && c.objetivoId === obj.id);
@@ -890,7 +919,6 @@
 
         window.iniciarExamenAlumno = async function(objId) {
             const sesionId = `${estudianteSesion.cedula}_${objId}`;
-
             const sSnap = await getDoc(doc(db, "sesiones_examen", sesionId));
             if (sSnap.exists()) {
                 const sData = sSnap.data();
@@ -901,22 +929,19 @@
                 objetivoActivo = objetivos.find(o => o.id === objId);
                 const matObj = materias.find(m => m.id === objetivoActivo?.materiaId);
                 
+                // TRAMPA MORTAL (00) POR INTENTO DE FRAUDE
                 await updateDoc(doc(db, "sesiones_examen", sesionId), { estado: "bloqueado_por_fraude", strikes: 99, calificado: true, notaFinal: 0.0 });
                 const qC = query(collection(db, "calificaciones"), where("cedula", "==", estudianteSesion.cedula), where("objetivoId", "==", objId));
                 const snapC = await getDocs(qC);
                 snapC.forEach(async (d) => await deleteDoc(d.ref));
                 await addDoc(collection(db, "calificaciones"), {
-                    fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula,
-                    estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`,
-                    materiaNombre: matObj ? matObj.nombre : 'Cátedra', objetivoId: objId,
-                    objetivoNombre: objetivoActivo ? objetivoActivo.nombre : 'Examen',
+                    fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula, estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`,
+                    materiaNombre: matObj ? matObj.nombre : 'Cátedra', objetivoId: objId, objetivoNombre: objetivoActivo ? objetivoActivo.nombre : 'Examen',
                     nota: 0.0, ponderacionTotal: objetivoActivo ? objetivoActivo.ponderacion : 20,
                     sancionado: true, motivoSancion: "FRAUDE GRAVE: Intento de evadir la seguridad borrando caché o inyectando código."
                 });
 
-                document.getElementById("vista-estudiante-tablero").classList.add("hidden");
-                document.getElementById("vista-examen-activo").classList.add("hidden");
-                document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
+                document.getElementById("vista-estudiante-tablero").classList.add("hidden"); document.getElementById("vista-examen-activo").classList.add("hidden"); document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
                 document.getElementById("sancion-nota-final").innerText = "00";
                 document.getElementById("sancion-detalle-final").innerText = "VIOLACIÓN CRÍTICA: Intento de vulnerar el sistema borrando caché. Evaluación reprobada sin derecho a apelación.";
                 return;
@@ -957,26 +982,19 @@
             let h = '';
             pregs.forEach((p, idx) => {
                 const valG = respuestasEstudiante[p.id];
-                h += `<div class="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-2">
-                        <p class="font-bold text-xs sm:text-sm text-slate-800">${idx+1}. ${p.enunciado} <span class="text-blue-600 font-normal">(${p.valor} pts)</span></p>
-                        <div class="space-y-1.5 text-xs">`;
+                h += `<div class="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-2"><p class="font-bold text-xs sm:text-sm text-slate-800">${idx+1}. ${p.enunciado} <span class="text-blue-600 font-normal">(${p.valor} pts)</span></p><div class="space-y-1.5 text-xs">`;
                 p.opciones.forEach((opc, oi) => {
                     const chk = (valG !== undefined && parseInt(valG) === oi) ? 'checked' : '';
-                    h += `<label class="flex items-center space-x-2 p-2 bg-white border rounded cursor-pointer hover:bg-slate-100">
-                            <input type="radio" name="preg_${p.id}" value="${oi}" onchange="window.guardarRespuestaAutoguardado('${p.id}', ${oi})" ${chk}>
-                            <span>${opc}</span></label>`;
+                    h += `<label class="flex items-center space-x-2 p-2 bg-white border rounded cursor-pointer hover:bg-slate-100"><input type="radio" name="preg_${p.id}" value="${oi}" onchange="window.guardarRespuestaAutoguardado('${p.id}', ${oi})" ${chk}><span>${opc}</span></label>`;
                 });
                 h += `</div></div>`;
             });
             cont.innerHTML = h;
 
             if (timerInterval) clearInterval(timerInterval);
-            actualizarRelojTexto();
-            tiempoUltimaIteracion = performance.now();
+            actualizarRelojTexto(); tiempoUltimaIteracion = performance.now();
             timerInterval = setInterval(() => {
-                const ahoraP = performance.now();
-                tiempoRestanteSegundos -= (ahoraP - tiempoUltimaIteracion) / 1000;
-                tiempoUltimaIteracion = ahoraP;
+                const ahoraP = performance.now(); tiempoRestanteSegundos -= (ahoraP - tiempoUltimaIteracion) / 1000; tiempoUltimaIteracion = ahoraP;
                 if (tiempoRestanteSegundos <= 0) { tiempoRestanteSegundos = 0; clearInterval(timerInterval); autoEntregarPorTiempoAgotado(); } 
                 else { actualizarRelojTexto(); }
             }, 1000);
@@ -1003,16 +1021,12 @@
         };
 
         function activarListenersSupervision() {
-            document.addEventListener("visibilitychange", onCambioPestana);
-            window.addEventListener("blur", onPerdidaFoco);
-            document.addEventListener("fullscreenchange", onSalidaPantallaCompleta);
-            window.addEventListener("resize", onResizeVentana);
+            document.addEventListener("visibilitychange", onCambioPestana); window.addEventListener("blur", onPerdidaFoco);
+            document.addEventListener("fullscreenchange", onSalidaPantallaCompleta); window.addEventListener("resize", onResizeVentana);
         }
         function desactivarListenersSupervision() {
-            document.removeEventListener("visibilitychange", onCambioPestana);
-            window.removeEventListener("blur", onPerdidaFoco);
-            document.removeEventListener("fullscreenchange", onSalidaPantallaCompleta);
-            window.removeEventListener("resize", onResizeVentana);
+            document.removeEventListener("visibilitychange", onCambioPestana); window.removeEventListener("blur", onPerdidaFoco);
+            document.removeEventListener("fullscreenchange", onSalidaPantallaCompleta); window.removeEventListener("resize", onResizeVentana);
         }
         function onCambioPestana() { if (document.hidden) registrarIncidencia("tab_change", "Navegador minimizado."); }
         function onPerdidaFoco() { registrarIncidencia("window_blur", "Pérdida de foco."); }
@@ -1044,15 +1058,12 @@
             const sId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
             await updateDoc(doc(db, "sesiones_examen", sId), { estado: "bloqueado_por_infracciones", strikes: strikeCount }).catch(()=>{});
             await addDoc(collection(db, "calificaciones"), { fecha: new Date().toLocaleString(), cedula: estudianteSesion.cedula, estudiante: `${estudianteSesion.nombre} ${estudianteSesion.apellido}`, objetivoId: objetivoActivo.id, nota: 1.0, ponderacionTotal: objetivoActivo.ponderacion, sancionado: true, motivoSancion: "Anulado por reincidencia." });
-            document.getElementById("modal-advertencia").classList.add("hidden"); 
-            document.getElementById("vista-examen-activo").classList.add("hidden"); 
-            document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
-            document.getElementById("sancion-nota-final").innerText = "01";
-            document.getElementById("sancion-detalle-final").innerText = motivo;
+            document.getElementById("modal-advertencia").classList.add("hidden"); document.getElementById("vista-examen-activo").classList.add("hidden"); document.getElementById("vista-sancion-bloqueo").classList.remove("hidden");
+            document.getElementById("sancion-nota-final").innerText = "01"; document.getElementById("sancion-detalle-final").innerText = motivo;
         }
 
         // ==========================================
-        // 13. ENTREGA Y CALIFICACIÓN AUTOMÁTICA CLIENTE (V4.10)
+        // 13. ENTREGA Y CALIFICACIÓN AUTOMÁTICA CLIENTE
         // ==========================================
         document.getElementById("btn-entregar-examen-final").addEventListener("click", () => procesarEntregaFinalCiega(false));
         function autoEntregarPorTiempoAgotado() { procesarEntregaFinalCiega(true); }
@@ -1064,8 +1075,7 @@
             const sesionId = `${estudianteSesion.cedula}_${objetivoActivo.id}`;
             const matObj = materias.find(m => m.id === objetivoActivo.materiaId);
             
-            document.getElementById("vista-examen-activo").classList.add("hidden"); 
-            document.getElementById("vista-resultados-fin").classList.remove("hidden");
+            document.getElementById("vista-examen-activo").classList.add("hidden"); document.getElementById("vista-resultados-fin").classList.remove("hidden");
             document.getElementById("res-estudiante-linea").innerText = `${estudianteSesion.nombre} ${estudianteSesion.apellido} (C.I: ${estudianteSesion.cedula})`;
             document.getElementById("res-nota-valor").innerHTML = `<span class="animate-pulse text-2xl text-blue-600">Evaluando...</span>`;
             document.getElementById("res-escala-valor").innerText = "Procesando calificación automática...";
@@ -1077,18 +1087,10 @@
                 const snapshotPregs = await getDocs(qP);
                 
                 let totalNota = 0; let aprobadas = []; let reprobadas = [];
-
                 snapshotPregs.forEach(docP => {
-                    const pData = docP.data();
-                    const seleccion = respuestasEstudiante[docP.id];
-                    const correcta = claves[docP.id];
-                    
-                    if (seleccion !== undefined && parseInt(seleccion) === parseInt(correcta)) {
-                        totalNota += parseFloat(pData.valor || 0);
-                        aprobadas.push(`<li class="text-sm">✅ ${pData.enunciado} <span class="font-bold text-emerald-600">(+${pData.valor} pts)</span></li>`);
-                    } else {
-                        reprobadas.push(`<li class="text-sm">❌ ${pData.enunciado} <span class="font-bold text-red-500">(${seleccion===undefined?'Vacía':'Mala'})</span></li>`);
-                    }
+                    const pData = docP.data(); const seleccion = respuestasEstudiante[docP.id]; const correcta = claves[docP.id];
+                    if (seleccion !== undefined && parseInt(seleccion) === parseInt(correcta)) { totalNota += parseFloat(pData.valor || 0); aprobadas.push(`<li class="text-sm">✅ ${pData.enunciado} <span class="font-bold text-emerald-600">(+${pData.valor} pts)</span></li>`); } 
+                    else { reprobadas.push(`<li class="text-sm">❌ ${pData.enunciado} <span class="font-bold text-red-500">(${seleccion===undefined?'Vacía':'Mala'})</span></li>`); }
                 });
 
                 let htmlReporte = `<div class="bg-white border p-4 rounded text-left">`;
@@ -1120,11 +1122,8 @@
             }
         }
 
-        // ==========================================
-        // FUNCIONALIDADES DEL DOCENTE Y REPORTES
-        // ==========================================
-        async function evaluarSesionesEntregadasEnServidor() { return; } // Vaciada en V4.10 porque se califica en cliente
-        
+        async function evaluarSesionesEntregadasEnServidor() { return; } // Retirado, auto-corrección en cliente
+
         window.verReporteEstudianteActual = function() {
             if (window.reporteHtmlActual) { document.getElementById("contenido-reporte-modal").innerHTML = window.reporteHtmlActual; document.getElementById("modal-ver-reporte").classList.remove("hidden"); }
         };
@@ -1154,16 +1153,11 @@
             const nom = docentePerfil.nombre ? `Prof. ${docentePerfil.nombre} ${docentePerfil.apellido}` : "Sin configurar";
             document.getElementById("header-docente-info").innerText = `Docente: ${nom}`;
             document.getElementById("doc-panel-nombre").innerText = `Docente Titular: ${nom}`;
-            
-            // Actualizamos visualmente el UID al cargar si ya está disponible
             const user = auth.currentUser;
-            if (user) {
-                const uidDisplay = document.getElementById("doc-uid-display");
-                if (uidDisplay) uidDisplay.innerText = `UID (Para Firestore): ${user.uid}`;
-            }
-
+            if (user) { const uidDisplay = document.getElementById("doc-uid-display"); if (uidDisplay) uidDisplay.innerText = `UID (Para Firestore): ${user.uid}`; }
             if (!document.getElementById("doc-cedula-input").value && docentePerfil.cedula) { document.getElementById("doc-cedula-input").value = docentePerfil.cedula; document.getElementById("doc-nombre-input").value = docentePerfil.nombre; document.getElementById("doc-apellido-input").value = docentePerfil.apellido; }
         }
+
         const tabsDoc = ["asistencia", "reanudacion", "materias", "evaluaciones", "preguntas", "alumnos", "calificaciones", "perfil"];
         tabsDoc.forEach(t => {
             document.getElementById(`tab-btn-${t}`).addEventListener("click", () => {
@@ -1178,9 +1172,6 @@
             });
         });
 
-        // ==========================================
-        // TAB 1: ASISTENCIA (AHORA CON BUSCADOR)
-        // ==========================================
         document.getElementById("filtro-asistencia-seccion").addEventListener("change", renderTablaAsistencia);
         document.getElementById("filtro-asistencia-txt").addEventListener("input", renderTablaAsistencia);
         
@@ -1188,14 +1179,10 @@
             const secId = document.getElementById("filtro-asistencia-seccion").value;
             const txt = (document.getElementById("filtro-asistencia-txt").value || "").toLowerCase();
             const cont = document.getElementById("tabla-asistencia-contenedor");
-            
             if (!secId) return cont.innerHTML = '<p class="text-slate-400 py-3">Selecciona una sección para listar alumnos.</p>';
-            
             let alums = estudiantes.filter(e => e.seccionId === secId);
             if(txt) alums = alums.filter(e => e.cedula.toLowerCase().includes(txt) || e.nombre.toLowerCase().includes(txt) || e.apellido.toLowerCase().includes(txt));
-
             if (alums.length === 0) return cont.innerHTML = '<p class="text-slate-400 py-3">No hay estudiantes que coincidan.</p>';
-            
             let h = `<table class="w-full border-collapse border"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Estudiante</th><th class="border p-2 text-center">Asistencia</th></tr></thead><tbody>`;
             alums.forEach(a => { h += `<tr><td class="border p-2">${a.cedula}</td><td class="border p-2">${a.nombre} ${a.apellido}</td><td class="border p-2 text-center"><input type="checkbox" onchange="window.toggleAsistencia('${a.id}', this.checked)" ${a.presenteAula ? 'checked' : ''}></td></tr>`; });
             cont.innerHTML = h + '</tbody></table>';
@@ -1204,7 +1191,6 @@
         document.getElementById("btn-todos-presentes").addEventListener("click", async () => { const s = document.getElementById("filtro-asistencia-seccion").value; estudiantes.filter(e=>e.seccionId===s).forEach(async a=>await updateDoc(doc(db,"estudiantes",a.id),{presenteAula:true}));});
         document.getElementById("btn-todos-ausentes").addEventListener("click", async () => { const s = document.getElementById("filtro-asistencia-seccion").value; estudiantes.filter(e=>e.seccionId===s).forEach(async a=>await updateDoc(doc(db,"estudiantes",a.id),{presenteAula:false}));});
 
-        // TAB 2 REANUDACION
         function renderTablaReanudacionDocente() {
             const cont = document.getElementById("tabla-reanudacion-contenedor");
             if (sesionesActivas.length === 0) return cont.innerHTML = '<p class="text-slate-400 py-3">No hay sesiones activas.</p>';
@@ -1235,7 +1221,6 @@
             }
         };
 
-        // TAB 3 MATERIAS
         document.getElementById("btn-crear-materia").addEventListener("click", async () => {
             const n = document.getElementById("mat-nombre").value; const c = document.getElementById("mat-codigo").value;
             if(!n) return; await addDoc(collection(db, "materias"), { nombre: n, codigo: c });
@@ -1274,7 +1259,6 @@
             c.innerHTML = secciones.filter(s=>s.materiaId===mId).map(s=>`<label class="border p-1 text-xs"><input type="checkbox" name="sec_eval" value="${s.id}" checked> ${s.nombre}</label>`).join('');
         }
 
-        // TAB 4 EVALUACIONES
         document.getElementById("btn-guardar-evaluacion").addEventListener("click", async () => {
             const m = document.getElementById("eval-mat-select").value; const n = document.getElementById("eval-nombre").value;
             const p = parseFloat(document.getElementById("eval-peso").value); const hi = document.getElementById("eval-hora-inicio").value;
@@ -1313,29 +1297,50 @@
             (await getDocs(query(collection(db, "calificaciones"), where("objetivoId", "==", id)))).forEach(async d=>await deleteDoc(d.ref));
             alert("Reiniciado");
         };
+
+        // 🔴 SISTEMA DE EDICIÓN DE FECHAS ROBUSTO
         window.editarObjetivo = async (id) => {
-            const o = objetivos.find(x=>x.id===id);
+            const o = objetivos.find(x => x.id === id);
             if(!o) return;
             document.getElementById("edit-eval-id").value = o.id;
             document.getElementById("edit-eval-nom").value = o.nombre;
             document.getElementById("edit-eval-peso").value = o.ponderacion;
-            const ofs = (new Date()).getTimezoneOffset()*60000;
-            document.getElementById("edit-eval-hora-inicio").value = o.horaInicio ? new Date(new Date(o.horaInicio) - ofs).toISOString().slice(0,16) : '';
-            document.getElementById("edit-eval-hora-fin").value = o.horaFin ? new Date(new Date(o.horaFin) - ofs).toISOString().slice(0,16) : '';
+            
+            const ofs = (new Date()).getTimezoneOffset() * 60000;
+            
+            if (o.horaInicio) { document.getElementById("edit-eval-hora-inicio").value = new Date(o.horaInicio - ofs).toISOString().slice(0,16); } 
+            else { document.getElementById("edit-eval-hora-inicio").value = ''; }
+            
+            if (o.horaFin) { document.getElementById("edit-eval-hora-fin").value = new Date(o.horaFin - ofs).toISOString().slice(0,16); } 
+            else { document.getElementById("edit-eval-hora-fin").value = ''; }
+            
             document.getElementById("modal-editar-objetivo").classList.remove("hidden");
         };
+
         document.getElementById("btn-guardar-edicion-objetivo").addEventListener("click", async () => {
             const id = document.getElementById("edit-eval-id").value;
             const n = document.getElementById("edit-eval-nom").value;
             const p = parseFloat(document.getElementById("edit-eval-peso").value);
-            const ti = new Date(document.getElementById("edit-eval-hora-inicio").value).getTime();
-            const tf = new Date(document.getElementById("edit-eval-hora-fin").value).getTime();
-            await updateDoc(doc(db,"objetivos",id), {nombre:n, ponderacion:p, horaInicio:ti, horaFin:tf});
-            document.getElementById("modal-editar-objetivo").classList.add("hidden");
+            const valInicio = document.getElementById("edit-eval-hora-inicio").value;
+            const valFin = document.getElementById("edit-eval-hora-fin").value;
+            
+            if(!n || !p || !valInicio || !valFin) { return alert("⚠️ Faltan datos: Asegúrate de llenar el nombre, puntos y ambas fechas."); }
+            
+            const ti = new Date(valInicio).getTime();
+            const tf = new Date(valFin).getTime();
+            
+            if(tf <= ti) { return alert("⚠️ Error lógico: La hora de cierre debe ser posterior a la hora de inicio."); }
+            
+            try {
+                await updateDoc(doc(db, "objetivos", id), { nombre: n, ponderacion: p, horaInicio: ti, horaFin: tf });
+                document.getElementById("modal-editar-objetivo").classList.add("hidden");
+                alert("✅ Fechas y evaluación actualizadas correctamente.");
+            } catch (error) {
+                alert("❌ ERROR AL GUARDAR:\n\n" + error.message);
+            }
         });
         window.eliminarObjetivo = async (id) => { if(confirm("¿Borrar Evaluación?")) await deleteDoc(doc(db,"objetivos",id)); };
 
-        // TAB 5 PREGUNTAS
         document.getElementById("doc-preg-mat").addEventListener("change", (e) => {
             const id = e.target.value; const s = document.getElementById("doc-preg-obj"); document.getElementById("box-crear-pregunta").classList.add("hidden");
             s.disabled = !id; s.innerHTML = '<option value="">Objetivo...</option>' + objetivos.filter(x=>x.materiaId===id).map(x=>`<option value="${x.id}">${x.nombre}</option>`).join('');
@@ -1370,29 +1375,22 @@
         });
         window.eliminarPregunta = async (pId, oId) => { await deleteDoc(doc(db,"preguntas",pId)); delete clavesDocente[pId]; await setDoc(doc(db,"claves_examen",oId), {respuestas:clavesDocente}, {merge:true}); };
 
-        // ==========================================
-        // TAB 6: ALUMNOS (AHORA CON BUSCADOR)
-        // ==========================================
         document.getElementById("filtro-alumnos-sec").addEventListener("change", renderTablaAlumnos);
         document.getElementById("filtro-alumnos-txt").addEventListener("input", renderTablaAlumnos);
-        
         function renderTablaAlumnos() {
             const sec = document.getElementById("filtro-alumnos-sec").value;
             const txt = (document.getElementById("filtro-alumnos-txt").value || "").toLowerCase();
-            
             let fs = estudiantes; 
             if(sec !== "TODAS") fs = fs.filter(x=>x.seccionId===sec);
             if(txt) fs = fs.filter(x => x.cedula.toLowerCase().includes(txt) || x.nombre.toLowerCase().includes(txt) || x.apellido.toLowerCase().includes(txt));
-            
             const cont = document.getElementById("tabla-alumnos-gestion");
             if(fs.length === 0) return cont.innerHTML = '<p class="text-slate-400 py-3">No hay alumnos que coincidan.</p>';
-            
             let h = `<table class="w-full border text-xs"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Estudiante</th><th class="border p-2">Acciones</th></tr></thead><tbody>`;
             fs.forEach(e => {
-                h += `<tr><td class="border p-2 font-mono">${e.cedula}</td><td class="border p-2">${e.nombre} ${e.apellido} ${e.passkeyId ? '🛡️ (Huella)' : ''}</td>
+                h += `<tr><td class="border p-2 font-mono">${e.cedula}</td><td class="border p-2">${e.nombre} ${e.apellido} ${e.passkeyId ? '🛡️' : ''}</td>
                 <td class="border p-2 text-center space-x-1">
                 <button onclick="window.editarDatosAlumnoModal('${e.id}')" class="bg-blue-100 px-2 py-1 rounded border">Editar</button>
-                <button onclick="window.forzarCierreSesionAlumno('${e.id}')" class="bg-amber-100 px-2 py-1 rounded border">Liberar Sesión</button>
+                <button onclick="window.forzarCierreSesionAlumno('${e.id}')" class="bg-amber-100 px-2 py-1 rounded border">Liberar</button>
                 <button onclick="window.eliminarAlumno('${e.id}')" class="bg-red-100 text-red-600 px-2 py-1 rounded border">Borrar</button>
                 </td></tr>`;
             });
@@ -1412,20 +1410,12 @@
             document.getElementById("modal-editar-alumno").classList.add("hidden");
         });
 
-        // ==========================================
-        // TAB 7: CALIFICACIONES (NUEVO MOTOR DE FILTROS EN CASCADA Y TEXTO)
-        // ==========================================
         document.getElementById("filtro-calif-txt").addEventListener("input", renderTablaCalificaciones);
         document.getElementById("filtro-calif-obj").addEventListener("change", renderTablaCalificaciones);
-        
         document.getElementById("filtro-calif-mat").addEventListener("change", (e) => {
-            const matId = e.target.value;
-            const objSel = document.getElementById("filtro-calif-obj");
-            if (matId === "TODAS") {
-                objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + objetivos.map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('');
-            } else {
-                objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + objetivos.filter(o=>o.materiaId===matId).map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('');
-            }
+            const matId = e.target.value; const objSel = document.getElementById("filtro-calif-obj");
+            if (matId === "TODAS") { objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + objetivos.map(o=>`<option value="${o.id}">${o.nombre}</option>`).join(''); } 
+            else { objSel.innerHTML = '<option value="TODOS">Todos los Objetivos</option>' + objetivos.filter(o=>o.materiaId===matId).map(o=>`<option value="${o.id}">${o.nombre}</option>`).join(''); }
             renderTablaCalificaciones();
         });
 
@@ -1435,26 +1425,17 @@
             const txtFiltro = (document.getElementById("filtro-calif-txt")?.value || "").toLowerCase();
 
             let filtradas = calificaciones;
-
             if (matFiltro !== "TODAS") {
                 const objsDeMateria = objetivos.filter(o => o.materiaId === matFiltro).map(o => o.id);
                 filtradas = filtradas.filter(c => objsDeMateria.includes(c.objetivoId));
             }
-            if (objFiltro !== "TODOS") {
-                filtradas = filtradas.filter(c => c.objetivoId === objFiltro);
-            }
+            if (objFiltro !== "TODOS") { filtradas = filtradas.filter(c => c.objetivoId === objFiltro); }
             if (txtFiltro) {
-                filtradas = filtradas.filter(c => 
-                    c.cedula.toLowerCase().includes(txtFiltro) || 
-                    c.estudiante.toLowerCase().includes(txtFiltro)
-                );
+                filtradas = filtradas.filter(c => c.cedula.toLowerCase().includes(txtFiltro) || c.estudiante.toLowerCase().includes(txtFiltro));
             }
 
             const cont = document.getElementById("tabla-calificaciones-final");
-            if (filtradas.length === 0) {
-                cont.innerHTML = '<p class="text-slate-400 py-3">No hay notas que coincidan con los filtros aplicados.</p>';
-                return;
-            }
+            if (filtradas.length === 0) { cont.innerHTML = '<p class="text-slate-400 py-3">No hay notas que coincidan.</p>'; return; }
 
             let h = `<table class="w-full border text-xs"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Alumno</th><th class="border p-2">Materia</th><th class="border p-2">Nota</th><th class="border p-2">Obs</th><th class="border p-2">🗑️</th></tr></thead><tbody>`;
             filtradas.forEach(c => {
@@ -1463,10 +1444,8 @@
             });
             cont.innerHTML = h + `</tbody></table>`;
         }
-
         window.eliminarNotaOficial = async (id) => { if(confirm("Borrar nota oficial?")) await deleteDoc(doc(db,"calificaciones",id)); };
 
-        // TAB 8 PERFIL
         document.getElementById("btn-guardar-perfil").addEventListener("click", async () => {
             await updateDoc(doc(db, "configuracion", "docente"), { cedula: document.getElementById("doc-cedula-input").value, nombre: document.getElementById("doc-nombre-input").value, apellido: document.getElementById("doc-apellido-input").value });
             alert("Guardado");
