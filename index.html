@@ -1567,7 +1567,7 @@
             renderTablaCalificaciones();
         });
 
-        function renderTablaCalificaciones() {
+function renderTablaCalificaciones() {
             const matFiltro = document.getElementById("filtro-calif-mat")?.value || "TODAS";
             const objFiltro = document.getElementById("filtro-calif-obj")?.value || "TODOS";
             const txtFiltro = (document.getElementById("filtro-calif-txt")?.value || "").toLowerCase();
@@ -1582,17 +1582,35 @@
                 filtradas = filtradas.filter(c => c.cedula.toLowerCase().includes(txtFiltro) || c.estudiante.toLowerCase().includes(txtFiltro));
             }
 
+            // NUEVO: Deduplicación simple y directa. Como vienen ordenadas por fecha descendente,
+            // solo mostramos la primera aparición (la más reciente) e ignoramos las copias.
+            const vistas = new Set();
+            const filtradasFinales = filtradas.filter(c => {
+                const key = `${c.cedula}_${c.objetivoId}`;
+                if (vistas.has(key)) return false; // Si ya vimos esta evaluación de este alumno, lo ignoramos
+                vistas.add(key);
+                return true;
+            });
+
             const cont = document.getElementById("tabla-calificaciones-final");
-            if (filtradas.length === 0) { cont.innerHTML = '<p class="text-slate-400 py-3">No hay notas que coincidan.</p>'; return; }
+            if (filtradasFinales.length === 0) { cont.innerHTML = '<p class="text-slate-400 py-3">No hay notas que coincidan.</p>'; return; }
 
             let h = `<table class="w-full border text-xs"><thead><tr class="bg-slate-100"><th class="border p-2">Cédula</th><th class="border p-2">Alumno</th><th class="border p-2">Materia</th><th class="border p-2">Nota</th><th class="border p-2">Obs</th><th class="border p-2">🗑️</th></tr></thead><tbody>`;
-            filtradas.forEach(c => {
-                h += `<tr><td class="border p-2 font-mono">${c.cedula}</td><td class="border p-2 font-medium">${c.estudiante}</td><td class="border p-2">${c.materiaNombre}</td><td class="border p-2 font-bold text-center text-blue-700">${c.nota}</td><td class="border p-2 text-[10px] text-slate-500">${c.motivoSancion}</td>
-                <td class="border p-2 text-center"><button onclick="window.eliminarNotaOficial('${c.id}')" class="text-red-500 font-bold bg-red-50 px-2 py-1 border rounded">X</button></td></tr>`;
+            filtradasFinales.forEach(c => {
+                h += `<tr><td class="border p-2 font-mono">${c.cedula}</td><td class="border p-2 font-medium">${c.estudiante}</td><td class="border p-2">${c.materiaNombre}</td><td class="border p-2 font-bold text-center text-blue-700">${c.nota}</td><td class="border p-2 text-[10px] text-slate-500">${c.motivoSancion || 'Sin observaciones'}</td>
+                <td class="border p-2 text-center"><button onclick="window.eliminarNotaOficial('${c.cedula}', '${c.objetivoId}')" class="text-red-500 font-bold bg-red-50 px-2 py-1 border rounded">X</button></td></tr>`;
             });
             cont.innerHTML = h + `</tbody></table>`;
         }
-        window.eliminarNotaOficial = async (id) => { if(confirm("Borrar nota oficial?")) await deleteDoc(doc(db,"calificaciones",id)); };
+
+        // Limpieza de raíz: Al borrar, elimina la nota visible y cualquier copia fantasma
+        window.eliminarNotaOficial = async (cedula, objetivoId) => { 
+            if(confirm("¿Borrar nota oficial? Esto limpiará la calificación final y todos sus registros duplicados.")) {
+                const qDel = query(collection(db, "calificaciones"), where("cedula", "==", cedula), where("objetivoId", "==", objetivoId));
+                const snapDel = await getDocs(qDel);
+                snapDel.forEach(async (d) => await deleteDoc(d.ref));
+            }
+        };
 
         document.getElementById("btn-guardar-perfil").addEventListener("click", async () => {
             await updateDoc(doc(db, "configuracion", "docente"), { cedula: document.getElementById("doc-cedula-input").value, nombre: document.getElementById("doc-nombre-input").value, apellido: document.getElementById("doc-apellido-input").value });
