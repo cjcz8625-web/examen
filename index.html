@@ -258,14 +258,19 @@
                         </div>
                     </div>
                 </div>
-                <div class="p-4 bg-white space-y-3">
+               <div class="p-4 bg-white space-y-3">
                     <label class="flex items-start space-x-3 cursor-pointer p-3 border border-blue-200 bg-blue-50 rounded-lg transition hover:bg-blue-100">
                         <input type="checkbox" id="chk-acepta-terminos-modal" class="mt-0.5 w-5 h-5 text-blue-700 rounded border-blue-300 focus:ring-blue-500">
                         <span class="text-xs font-semibold text-blue-900">Declaro que he leído, comprendo y acepto todas las condiciones técnicas y normativas estipuladas.</span>
                     </label>
-                    <button id="btn-confirmar-terminos" class="w-full bg-slate-300 text-slate-500 font-bold py-3 rounded text-sm transition-all duration-300 cursor-not-allowed" disabled>
-                        Continuar al Sistema
-                    </button>
+                    <div class="flex gap-2">
+                        <button id="btn-rechazar-terminos" class="w-1/3 bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded text-sm transition-all duration-300">
+                            No Acepto, Salir
+                        </button>
+                        <button id="btn-confirmar-terminos" class="w-2/3 bg-slate-300 text-slate-500 font-bold py-3 rounded text-sm transition-all duration-300 cursor-not-allowed" disabled>
+                            Continuar al Sistema
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1646,6 +1651,7 @@ function renderTablaCalificaciones() {
         // Activar el botón solo cuando el alumno marque la casilla de aceptación V2
         const chkAceptaTerminos = document.getElementById("chk-acepta-terminos-modal");
         const btnConfirmarTerminos = document.getElementById("btn-confirmar-terminos");
+        const btnRechazarTerminos = document.getElementById("btn-rechazar-terminos");
 
         if (chkAceptaTerminos && btnConfirmarTerminos) {
             chkAceptaTerminos.addEventListener("change", function() {
@@ -1672,6 +1678,27 @@ function renderTablaCalificaciones() {
                     btnConfirmarTerminos.innerText = "Continuar al Sistema";
                 }
             });
+
+            // Lógica de Rechazo: Cerrar sesión segura y expulsar al portal
+            if (btnRechazarTerminos) {
+                btnRechazarTerminos.addEventListener("click", async () => {
+                    if (estudianteSesion) {
+                        if (unsubVigilanciaSesion) { unsubVigilanciaSesion(); unsubVigilanciaSesion = null; }
+                        await updateDoc(doc(db, "estudiantes", estudianteSesion.id), { tokenSesionActivo: null, enLinea: false }).catch(() => {});
+                    }
+                    sessionStorage.removeItem("token_sesion_estudiante");
+                    estudianteSesion = null;
+                    
+                    document.getElementById("modal-terminos-legales").classList.add("hidden");
+                    document.getElementById("vista-estudiante-tablero").classList.add("hidden");
+                    document.getElementById("vista-estudiante-portal").classList.remove("hidden");
+                    
+                    chkAceptaTerminos.checked = false;
+                    chkAceptaTerminos.dispatchEvent(new Event("change")); // Resetea la interfaz visual del botón
+                    
+                    alert("Has rechazado los Términos de Uso. Tu sesión ha sido cerrada de forma segura.");
+                });
+            }
         }
     </script>
 </body>
