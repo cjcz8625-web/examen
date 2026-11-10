@@ -983,7 +983,16 @@
             const cont = document.getElementById("contenedor-evaluaciones-alumno");
             const dashCont = document.getElementById("dashboard-estudiante-stats");
             
-            const misCalificaciones = calificaciones.filter(c => c.cedula === estudianteSesion.cedula);
+            // NUEVO: Deduplicación estricta para las estadísticas del estudiante
+            const todasLasNotas = calificaciones.filter(c => c.cedula === estudianteSesion.cedula);
+            const evaluacionesVistas = new Set();
+            const misCalificaciones = todasLasNotas.filter(c => {
+                // Si ya contamos una nota para este examen (objetivoId), ignoramos las copias fantasma
+                if (evaluacionesVistas.has(c.objetivoId)) return false;
+                evaluacionesVistas.add(c.objetivoId);
+                return true;
+            });
+
             let totalPresentadas = misCalificaciones.length;
             let notaAcumulada = 0; let ponderacionAcumulada = 0;
             
